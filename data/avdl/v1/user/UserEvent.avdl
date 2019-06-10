@@ -1,0 +1,12 @@
+@namespace("poc.user")
+protocol events {
+
+  import idl "../common/SharedMeta.avdl";
+
+  record UserEvent {
+    int version = 1;
+    poc.common.SharedMeta meta;
+    int userId;
+  }
+
+}

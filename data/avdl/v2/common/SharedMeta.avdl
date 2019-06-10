@@ -1,0 +1,10 @@
+@namespace("poc.common")
+protocol events {
+
+  record SharedMeta {
+    int version = 2;
+    string uuid;
+    union {null, string} source = null;
+  }
+
+}
