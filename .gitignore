@@ -1,0 +1,9 @@
+.idea
+vendor
+node_modules
+.gradle
+build
+data/downloaded
+data/avsc
+data/avpr
+docker-compose.override.yml
