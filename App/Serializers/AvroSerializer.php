@@ -8,6 +8,10 @@ use AvroSchema;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
 use FlixTech\AvroSerializer\Objects\RecordSerializer;
 use FlixTech\SchemaRegistryApi\Registry;
+use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
+use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
+use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
+use GuzzleHttp\Client;
 use RdKafka\Message;
 
 class AvroSerializer implements KafkaSerializerInterface
@@ -24,6 +28,17 @@ class AvroSerializer implements KafkaSerializerInterface
     public function __construct(Registry $registry)
     {
         $this->serializer = $this->createSerializer($registry);
+    }
+
+    public static function createWithDefaultRegistry(
+      string $schemaRegistryUri,
+      string $username,
+      string $password
+    ): AvroSerializer {
+        $client = new Client(['base_uri' => $schemaRegistryUri, 'auth' => [$username, $password]]);
+        $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
+
+        return new self($registry);
     }
 
     public function serialize(BaseRecord $record): string
@@ -57,7 +72,7 @@ class AvroSerializer implements KafkaSerializerInterface
         }
     }
 
-    public function createSerializer(Registry $registry): RecordSerializer
+    private function createSerializer(Registry $registry): RecordSerializer
     {
         return new RecordSerializer(
           $registry,
@@ -68,14 +83,16 @@ class AvroSerializer implements KafkaSerializerInterface
         );
     }
 
-    public function shouldRegisterMissingSchemas(bool $shouldRegisterMissingSchemas): void
+    public function shouldRegisterMissingSchemas(bool $shouldRegisterMissingSchemas): AvroSerializer
     {
         $this->shouldRegisterMissingSchemas = $shouldRegisterMissingSchemas;
+        return $this;
     }
 
-    public function shouldRegisterMissingSubjects(bool $shouldRegisterMissingSubjects): void
+    public function shouldRegisterMissingSubjects(bool $shouldRegisterMissingSubjects): AvroSerializer
     {
         $this->shouldRegisterMissingSubjects = $shouldRegisterMissingSubjects;
+        return $this;
     }
 
 }

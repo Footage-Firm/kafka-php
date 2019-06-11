@@ -40,11 +40,6 @@ class ProducerConfig extends Config
 
     private $ackLevel;
 
-    public function __construct(string $schemaRegistryUri, string $brokers)
-    {
-        //Ignore IDE squiggly, there is a constructor its just not int he stub extension
-        parent::__construct($schemaRegistryUri, $brokers);
-    }
 
     public function getLogLevel(): ?int
     {

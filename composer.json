@@ -10,8 +10,8 @@
     }
   ],
   "scripts": {
-    "produce": "docker-compose run php php App/produce.php",
-    "consume": "docker-compose run php php App/consume.php"
+    "produce": "docker-compose run php php App/Producer/example.php",
+    "consume": "docker-compose run php php App/Consumer/example.php"
   },
   "require": {
     "kwn/php-rdkafka-stubs": "dev-master",

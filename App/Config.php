@@ -2,6 +2,7 @@
 
 namespace App;
 
+use App\Serializers\KafkaSerializerInterface;
 use RdKafka\Conf as KafkaConfig;
 
 // https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
@@ -9,9 +10,13 @@ use RdKafka\Conf as KafkaConfig;
 class Config extends KafkaConfig
 {
 
-    protected $schemaRegistryUri;
+    public const LOW_LATENCY_SOCKET_TIMEOUT = 50;
+
+    public const LOW_LATENCY_QUEUE_BUFFERING_MAX = 1;
 
     protected $brokers;
+
+    protected $serializer;
 
     protected $kafkaConfig;
 
@@ -19,27 +24,30 @@ class Config extends KafkaConfig
 
     protected $shouldRegisterMissingSubjects = false;
 
-    public function __construct(string $schemaRegistryUri, string $brokers)
+    public function __construct(string $brokers, KafkaSerializerInterface $serializer)
     {
         //Ignore IDE squiggly, there is a constructor its just not int he stub extension
         parent::__construct();
-        $this->schemaRegistryUri = $schemaRegistryUri;
-        $this->setDefaultBrokers($brokers);
 
-        // https://github.com/arnaud-lb/php-rdkafka#performance--low-latency-settings
-        $this->set('socket.timeout.ms', 50);
-        if (function_exists('pcntl_sigprocmask')) {
-            pcntl_sigprocmask(SIG_BLOCK, [SIGIO]);
-            $this->set('internal.termination.signal', SIGIO);
-        } else {
-            $this->set('queue.buffering.max.ms', 1);
-        }
+        $this->serializer = $serializer;
+        $this->setDefaultBrokers($brokers)->withLowLatencySettings();
 
     }
 
-    public function getSchemaRegistryUri(): string
+    // https://github.com/arnaud-lb/php-rdkafka#performance--low-latency-settings
+    public function withLowLatencySettings(): Config
     {
-        return $this->schemaRegistryUri;
+        $this->setSocketTimeout(self::LOW_LATENCY_SOCKET_TIMEOUT);
+
+        if (function_exists('pcntl_sigprocmask')) {
+            pcntl_sigprocmask(SIG_BLOCK, [SIGIO]);
+            $this->set('internal.termination.signal', SIGIO);
+            $this->setInternalTerminationSignal(SIGIO);
+        } else {
+            $this->setQueueBufferingMax(self::LOW_LATENCY_QUEUE_BUFFERING_MAX);
+        }
+
+        return $this;
     }
 
     public function getBrokers(): string
@@ -47,31 +55,32 @@ class Config extends KafkaConfig
         return $this->brokers;
     }
 
-    private function setDefaultBrokers(string $brokers): void
+    private function setDefaultBrokers(string $brokers): Config
     {
-        $this->set('metadata.broker.list', $brokers);
+        return $this->set('metadata.broker.list', $brokers);
     }
 
-    public function shouldRegisterMissingSchemas(): bool
+    public function setSocketTimeout(int $timeoutMs): Config
     {
-        return $this->shouldRegisterMissingSchemas;
+        return $this->set('socket.timeout.ms', $timeoutMs);
     }
 
-    public function setShouldRegisterMissingSchemas(bool $registerMissingSchemas): Config
+    public function setInternalTerminationSignal(int $signalValue): Config
     {
-        $this->shouldRegisterMissingSchemas = $registerMissingSchemas;
-        return $this;
+        return $this->set('internal.termination.signal', $signalValue);
     }
 
-    public function shouldRegisterMissingSubjects(): bool
+    public function setQueueBufferingMax(int $maxMs): Config
     {
-        return $this->shouldRegisterMissingSubjects;
+        return $this->set('queue.buffering.max.ms', $maxMs);
     }
 
-    public function setShouldRegisterMissingSubjects(bool $registerMissingSubjects): Config
+    public function setSslData(string $caLocation, string $certLocation, string $keyLocation): Config
     {
-        $this->shouldRegisterMissingSubjects = $registerMissingSubjects;
-        return $this;
+        return $this->set('security.protocol', 'ssl')
+          ->set('ssl.ca.location', $caLocation)
+          ->set('ssl.certificate.location', $certLocation)
+          ->set('ssl.key.location', $keyLocation);
     }
 
     public function set($name, $value): Config

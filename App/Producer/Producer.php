@@ -3,9 +3,8 @@
 namespace App\Producer;
 
 use App\Events\BaseRecord;
-use App\SerializerFactory;
-use AvroSchema;
-use FlixTech\AvroSerializer\Objects\RecordSerializer;
+use App\Serializers\KafkaSerializerInterface;
+use RdKafka\Metadata;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\Topic;
 
@@ -19,10 +18,10 @@ class Producer
 
     private $kafkaProducer;
 
-    public function __construct(ProducerConfig $config, RecordSerializer $serializer = null)
+    public function __construct(ProducerConfig $config, KafkaSerializerInterface $serializer)
     {
         $this->config = $config;
-        $this->serializer = $serializer ?? (new SerializerFactory($config))->instance();
+        $this->serializer = $serializer;
         $this->kafkaProducer = $this->createKafkaProducer();
     }
 
@@ -40,7 +39,7 @@ class Producer
 
     }
 
-    public function getMetaData(bool $allTopics, ?Topic $onlyTopic, int $timeoutMs)
+    public function getMetaData(bool $allTopics, ?Topic $onlyTopic, int $timeoutMs): Metadata
     {
         return $this->kafkaProducer->getMetadata($allTopics, $onlyTopic, $timeoutMs);
     }
@@ -59,23 +58,6 @@ class Producer
 
     private function encodeRecord(BaseRecord $record): string
     {
-        $schema = AvroSchema::parse($record->schema());
-        $data = $record->data();
-        $name = str_replace('_', '-', $this->convertToSnakeCase($record->name()));
-
-        return $this->serializer->encodeRecord($name . '-value', $schema, $data);
+        return $this->serializer->serialize($record);
     }
-
-    private function convertToSnakeCase($value, $delimiter = '_')
-    {
-        if (!ctype_lower($value)) {
-            $value = preg_replace('/\s+/u', '', ucwords($value));
-
-            $value = preg_replace('/(.)(?=[A-Z])/u', '$1' . $delimiter, $value);
-            return mb_strtolower($value, 'UTF-8');
-        }
-
-        return $value;
-    }
-
 }
