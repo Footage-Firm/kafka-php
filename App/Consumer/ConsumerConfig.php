@@ -3,6 +3,7 @@
 namespace App\Consumer;
 
 use App\Config;
+use App\Serializers\KafkaSerializerInterface;
 use RdKafka\TopicConf;
 
 class ConsumerConfig extends Config
@@ -26,20 +27,21 @@ class ConsumerConfig extends Config
     private $offsetReset;
 
     public function __construct(
-      string $groupId,
-      $schemaRegistryUri,
       string $brokers,
-      TopicConf $defaultTopicConfig = null
+      string $groupId,
+      KafkaSerializerInterface $serializer
     ) {
-        //Ignore IDE squiggly, there is a constructor its just not int he stub extension
-        parent::__construct($schemaRegistryUri, $brokers);
-        $defaultTopicConfig = $defaultTopicConfig ?? $this->createDefaultTopicConfig();
+        parent::__construct($brokers, $serializer);
+        $this->groupId = $groupId;
+        $defaultTopicConfig = $this->createDefaultTopicConfig();
         $this->setDefaultTopicConf($defaultTopicConfig);
         $this->setGroupId($groupId);
+
     }
 
-    public function setPartition(int $partition)
-    {
+    public function setPartition(
+      int $partition
+    ) {
         $this->partition = $partition;
         return $this;
     }
@@ -49,8 +51,9 @@ class ConsumerConfig extends Config
         return $this->offset ?? static::DEFAULT_OFFSET;
     }
 
-    public function setOffset(int $offset)
-    {
+    public function setOffset(
+      int $offset
+    ) {
         $this->offset = $offset;
         return $this;
     }
@@ -60,14 +63,16 @@ class ConsumerConfig extends Config
         return $this->timeout ?? static::DEFAULT_TIMEOUT;
     }
 
-    public function setTimeout(int $timeout)
-    {
+    public function setTimeout(
+      int $timeout
+    ) {
         $this->timeout = $timeout;
         return $this;
     }
 
-    public function setOffsetReset(string $reset)
-    {
+    public function setOffsetReset(
+      string $reset
+    ) {
         $this->offsetReset = $reset;
     }
 
@@ -81,8 +86,9 @@ class ConsumerConfig extends Config
         return $this->groupId;
     }
 
-    public function setGroupId(string $groupId)
-    {
+    public function setGroupId(
+      string $groupId
+    ) {
         $this->groupId = $groupId;
         $this->set('group.id', $groupId);
         return $this;

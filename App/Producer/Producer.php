@@ -3,7 +3,6 @@
 namespace App\Producer;
 
 use App\Events\BaseRecord;
-use App\Serializers\KafkaSerializerInterface;
 use RdKafka\Metadata;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\Topic;
@@ -18,10 +17,10 @@ class Producer
 
     private $kafkaProducer;
 
-    public function __construct(ProducerConfig $config, KafkaSerializerInterface $serializer)
+    public function __construct(ProducerConfig $config)
     {
         $this->config = $config;
-        $this->serializer = $serializer;
+        $this->serializer = $config->getSerializer();
         $this->kafkaProducer = $this->createKafkaProducer();
     }
 

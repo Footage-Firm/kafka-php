@@ -8,11 +8,6 @@ use AvroSchema;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
 use FlixTech\AvroSerializer\Objects\RecordSerializer;
 use FlixTech\SchemaRegistryApi\Registry;
-use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
-use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
-use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
-use GuzzleHttp\Client;
-use RdKafka\Message;
 
 class AvroSerializer implements KafkaSerializerInterface
 {
@@ -21,24 +16,16 @@ class AvroSerializer implements KafkaSerializerInterface
 
     private $serializer;
 
-    private $shouldRegisterMissingSchemas = false;
-
-    private $shouldRegisterMissingSubjects = false;
-
-    public function __construct(Registry $registry)
-    {
-        $this->serializer = $this->createSerializer($registry);
-    }
-
-    public static function createWithDefaultRegistry(
-      string $schemaRegistryUri,
-      string $username,
-      string $password
-    ): AvroSerializer {
-        $client = new Client(['base_uri' => $schemaRegistryUri, 'auth' => [$username, $password]]);
-        $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
-
-        return new self($registry);
+    public function __construct(
+      Registry $registry,
+      bool $shouldRegisterMissingSchemas = false,
+      bool $shouldRegisterMissingSubjects = false
+    ) {
+        $this->serializer = $this->createSerializer(
+          $registry,
+          $shouldRegisterMissingSchemas,
+          $shouldRegisterMissingSubjects
+        );
     }
 
     public function serialize(BaseRecord $record): string
@@ -50,10 +37,10 @@ class AvroSerializer implements KafkaSerializerInterface
         return $this->serializer->encodeRecord($name . '-value', $schema, $data);
     }
 
-    public function deserialize(Message $message, BaseRecord $record): BaseRecord
+    public function deserialize(string $payload, BaseRecord $record): BaseRecord
     {
         try {
-            $decoded = $this->serializer->decodeMessage($message->payload);
+            $decoded = $this->serializer->decodeMessage($payload);
             $record->decode($decoded);
             return $record;
         } catch (AvroDecodingException $e) {
@@ -72,27 +59,19 @@ class AvroSerializer implements KafkaSerializerInterface
         }
     }
 
-    private function createSerializer(Registry $registry): RecordSerializer
-    {
+    private function createSerializer(
+      Registry $registry,
+      bool $shouldRegisterMissingSchemas,
+      bool $shouldRegisterMissingSubjects
+    ): RecordSerializer {
         return new RecordSerializer(
           $registry,
           [
-            RecordSerializer::OPTION_REGISTER_MISSING_SCHEMAS => $this->shouldRegisterMissingSchemas,
-            RecordSerializer::OPTION_REGISTER_MISSING_SUBJECTS => $this->shouldRegisterMissingSubjects,
+            RecordSerializer::OPTION_REGISTER_MISSING_SCHEMAS => $shouldRegisterMissingSchemas,
+            RecordSerializer::OPTION_REGISTER_MISSING_SUBJECTS => $shouldRegisterMissingSubjects,
           ]
         );
     }
 
-    public function shouldRegisterMissingSchemas(bool $shouldRegisterMissingSchemas): AvroSerializer
-    {
-        $this->shouldRegisterMissingSchemas = $shouldRegisterMissingSchemas;
-        return $this;
-    }
-
-    public function shouldRegisterMissingSubjects(bool $shouldRegisterMissingSubjects): AvroSerializer
-    {
-        $this->shouldRegisterMissingSubjects = $shouldRegisterMissingSubjects;
-        return $this;
-    }
 
 }

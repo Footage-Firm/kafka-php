@@ -55,6 +55,11 @@ class Config extends KafkaConfig
         return $this->brokers;
     }
 
+    public function getSerializer(): KafkaSerializerInterface
+    {
+        return $this->serializer;
+    }
+
     private function setDefaultBrokers(string $brokers): Config
     {
         return $this->set('metadata.broker.list', $brokers);

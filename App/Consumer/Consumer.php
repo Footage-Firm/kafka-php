@@ -3,9 +3,7 @@
 namespace App\Consumer;
 
 use App\Events\BaseRecord;
-use App\SerializerFactory;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
-use FlixTech\AvroSerializer\Objects\RecordSerializer;
 use RdKafka\Exception as KafkaException;
 use RdKafka\KafkaConsumer;
 use RdKafka\KafkaConsumerTopic;
@@ -18,8 +16,6 @@ class Consumer
 
     private $serializer;
 
-    private $kafkaConsumer;
-
     private $config;
 
     private $errorCallback;
@@ -28,40 +24,31 @@ class Consumer
 
     private $topics;
 
-    public function __construct(ConsumerConfig $config, array $topics, RecordSerializer $serializer = null)
+    private $kafkaConsumer;
+
+    public function __construct(ConsumerConfig $config)
     {
         $this->config = $config;
-        $this->topics = $topics;
-        $this->serializer = $serializer ?? (new SerializerFactory($config))->instance();
-        $this->kafkaConsumer = new KafkaConsumer($this->config);
-        $this->kafkaConsumer->subscribe($topics);
+        $this->serializer = $config->getSerializer();
+        $this->kafkaConsumer = $this->createKafkaConsumer();
+
+
     }
 
-    public function consumeSingle(BaseRecord $record)
+    public function consume(array $topics, BaseRecord $record): void
     {
-        $message = $this->kafkaConsumer->consume($this->config->getTimeout());
-        return $this->handleMessage($message, $record);
-    }
-
-    public function consumeUntilEnd(BaseRecord $record): array
-    {
-        $results = [];
-
-        $message = $this->kafkaConsumer->consume($this->config->getTimeout());
-        print "initial msg $message->err";
-        while ($message->err !== RD_KAFKA_RESP_ERR__PARTITION_EOF) {
-            $results[] = $this->handleMessage($message, $record);
-            $message = $this->kafkaConsumer->consume($this->config->getTimeout());
+        try {
+            $this->kafkaConsumer->subscribe($topics);
+        } catch (Throwable $e) {
+            print $e->getMessage() . "\n" . $e->getCode();
         }
-
-        return $results;
-    }
-
-    public function consume(BaseRecord $record): void
-    {
-        while (true) {
-            $message = $this->kafkaConsumer->consume($this->config->getTimeout());
-            $this->handleMessage($message, $record);
+        try {
+            while (true) {
+                $message = $this->kafkaConsumer->consume($this->config->getTimeout());
+                $this->handleMessage($message, $record);
+            }
+        } finally {
+            $this->kafkaConsumer->unsubscribe();
         }
     }
 
@@ -69,6 +56,7 @@ class Consumer
     {
         switch ($message->err) {
             case RD_KAFKA_RESP_ERR_NO_ERROR:
+                print "NO error";
                 return $this->handleNoError($message, $record);
                 break;
             case RD_KAFKA_RESP_ERR__PARTITION_EOF:
@@ -78,6 +66,7 @@ class Consumer
                 $this->handleTimeOut();
                 break;
             default:
+                print "error";
                 $this->handleError($message, $record);
                 break;
         }
@@ -116,8 +105,9 @@ class Consumer
     private function handleNoError(Message $message, BaseRecord $record)
     {
         try {
-            $decoded = $this->serializer->decodeMessage($message->payload);
-            $record->decode($decoded);
+
+            $decoded = $this->serializer->deserialize($message->payload, $record);
+            return ($this->successCallback)($decoded);
         } catch (AvroDecodingException $e) {
             $prev = $e->getPrevious();
 
@@ -131,9 +121,6 @@ class Consumer
             [$_, $writerType, $readerType] = $matches;
 
             echo ">>> Skipping message. writerType: $writerType, readerType: $readerType" . PHP_EOL;
-        }
-        try {
-            return ($this->successCallback)($record);
         } catch (Throwable $t) {
             // ....
         }
@@ -156,6 +143,11 @@ class Consumer
             ($this->errorCallback)();
         }
         throw new KafkaException(sprintf('%s for record %s', $message->errstr(), $record->name()), $message->err);
+    }
+
+    private function createKafkaConsumer(): KafkaConsumer
+    {
+        return new KafkaConsumer($this->config);
     }
 
     //    private function getPartitionsInfo()

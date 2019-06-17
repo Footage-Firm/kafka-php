@@ -1,27 +1,19 @@
 <?php
 
-namespace App;
 
-
-use App\Events\Poc\Common\SharedMeta;
+use App\Consumer\Consumer;
+use App\Consumer\ConsumerConfig;
 use App\Events\Poc\User\V2\UserEvent;
-use App\Producer\Producer;
-use App\Producer\ProducerConfig;
 use App\Serializers\AvroSerializer;
-use DateTime;
-use Faker\Factory;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
 use GuzzleHttp\Client;
-use RdKafka\Message;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-
-function produce()
+function consume()
 {
-
     //    $schemaRegistryUri = 'schema-registry:8081';
     $schemaRegistryUri = 'https://kafka-development-storyblocks-16cb.aivencloud.com:18367';
     $schemaRegistryUser = 'avnadmin';
@@ -29,41 +21,37 @@ function produce()
     //    $brokers = 'broker';
     $brokers = 'kafka-development-storyblocks-16cb.aivencloud.com:18364';
     //    $topic = 'user-event';
-    $topic = 'bbatest';
-
     $caLocation = '/opt/project/ca.pem';
     $certLocation = '/opt/project/service.cert';
     $keyLocation = '/opt/project/service.key';
+
     $client = new Client(['base_uri' => $schemaRegistryUri, 'auth' => [$schemaRegistryUser, $schemaRegistryPassword]]);
     $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
-    $serializer = new AvroSerializer($registry, true, true);
+    $serializer = new AvroSerializer($registry);//, true, true);
 
-    $config = new ProducerConfig($brokers, $serializer);
+    $config = new ConsumerConfig($brokers, 'brendanGroup', $serializer);
     $config->setSslData($caLocation, $certLocation, $keyLocation);
-    $config->setDrMsgCb(function (\RdKafka\Producer $kafka, Message $message)
-    {
-        if ($message->err) {
-            var_dump($message);
-        } else {
-            echo 'Looks like it worked' . PHP_EOL;
-        }
 
+    $topics = ['bbatest'];
+
+
+    echo 'Consuming topics: ' . implode(',', $topics) . PHP_EOL;
+
+    $consumer = new Consumer($config);
+
+    $consumer->onSuccess(function (UserEvent $userEvent)
+    {
+        print "OK success";
+        $x = json_encode($userEvent, JSON_PRETTY_PRINT) . PHP_EOL;
+        var_dump($x);
+        return $x;
+    });
+    $consumer->onError(function ()
+    {
+        echo 'An error has occurred';
     });
 
-    $producer = new Producer($config);
-
-    $faker = Factory::create();
-
-    for ($i = 1; $i <= 10; $i++) {
-        $date = new DateTime();
-        $d = $date->format('Y-m-d H:i:s');
-        echo "Producing topic: $topic" . PHP_EOL;
-        $meta1 = (new SharedMeta())->setUuid($d . '-' . $i);
-        $userEventV1 = (new UserEvent())->setUserId($faker->randomDigit)->setMeta($meta1);
-
-        $producer->fire($topic, $userEventV1);
-    }
+    $consumer->consume($topics, new UserEvent());
 }
 
-
-produce();
+consume();
