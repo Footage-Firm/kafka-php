@@ -4,6 +4,7 @@ namespace App\Consumer;
 
 use App\Events\BaseRecord;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
+use Monolog\Logger;
 use RdKafka\Exception as KafkaException;
 use RdKafka\KafkaConsumer;
 use RdKafka\KafkaConsumerTopic;
@@ -26,13 +27,14 @@ class Consumer
 
     private $kafkaConsumer;
 
+    private $logger;
+
     public function __construct(ConsumerConfig $config)
     {
         $this->config = $config;
         $this->serializer = $config->getSerializer();
-        $this->kafkaConsumer = $this->createKafkaConsumer();
-
-
+        $this->logger = $config->getLogger();
+        $this->kafkaConsumer = new KafkaConsumer($this->config);
     }
 
     public function consume(array $topics, BaseRecord $record): void
@@ -40,7 +42,10 @@ class Consumer
         try {
             $this->kafkaConsumer->subscribe($topics);
         } catch (Throwable $e) {
-            print $e->getMessage() . "\n" . $e->getCode();
+            $this->logger->log(
+              Logger::ERROR,
+              sprintf('Error subscribing to topics %s: %s ', implode(',', $topics), $e->getMessage())
+            );
         }
         try {
             while (true) {
@@ -56,7 +61,7 @@ class Consumer
     {
         switch ($message->err) {
             case RD_KAFKA_RESP_ERR_NO_ERROR:
-                return $this->handleNoError($message, $record);
+                return $this->handleSuccess($message, $record);
                 break;
             case RD_KAFKA_RESP_ERR__PARTITION_EOF:
                 return $this->handlePartitionEof();
@@ -68,6 +73,66 @@ class Consumer
                 $this->handleError($message, $record);
                 break;
         }
+    }
+
+    private function handleSuccess(Message $message, BaseRecord $record)
+    {
+        try {
+
+            $decoded = $this->serializer->deserialize($message->payload, $record);
+            try {
+                return ($this->successCallback)($decoded);
+            } catch (Throwable $t) {
+                $this->logger->log(
+                  Logger::ERROR,
+                  sprintf('Error executing success callback: ' . $t->getMessage())
+                );
+            }
+        } catch (AvroDecodingException $e) {
+            $this->logAvroDecodingException($e);
+        } catch (Throwable $t) {
+            $this->logger->log(Logger::ERROR, $t->getMessage());
+        }
+
+    }
+
+    private function logAvroDecodingException(AvroDecodingException $e): void
+    {
+        $prev = $e->getPrevious();
+
+        // parse the reader/writer types
+        $matches = [];
+        preg_match(
+          '/Writer\'s schema .*?"name":"(\w+)".*?Reader\'s schema .*?"name":"(\w+)"/',
+          $prev->getMessage(),
+          $matches
+        );
+        [$_, $writerType, $readerType] = $matches;
+
+        $msg = ">>> Skipping message. writerType: $writerType, readerType: $readerType" . PHP_EOL;
+        echo $msg;
+        $this->logger->log(Logger::WARNING, $msg);
+    }
+
+
+    private function handlePartitionEof(): string
+    {
+        return 'No more messages; will wait for more';
+    }
+
+    private function handleTimeOut(): string
+    {
+        Return 'Time out';
+    }
+
+    private function handleError(Message $message, BaseRecord $record)
+    {
+        if ($this->errorCallback) {
+            return ($this->errorCallback)();
+        }
+        $msg = sprintf('%s for record %s: %s', $message->errstr(), $record->name(), $message->err);
+        $this->logger->log(Logger::ERROR, $msg);
+        throw new KafkaException($msg);
     }
 
     public function onError(callable $callback): void
@@ -100,56 +165,4 @@ class Consumer
         return $this->kafkaConsumer->getSubscription();
     }
 
-    private function handleNoError(Message $message, BaseRecord $record)
-    {
-        try {
-
-            $decoded = $this->serializer->deserialize($message->payload, $record);
-            try {
-                ($this->successCallback)($decoded);
-            } catch (Throwable $t) {
-                print $t->getMessage();
-            }
-
-        } catch (AvroDecodingException $e) {
-            $prev = $e->getPrevious();
-
-            // parse the reader/writer types
-            $matches = [];
-            preg_match(
-              '/Writer\'s schema .*?"name":"(\w+)".*?Reader\'s schema .*?"name":"(\w+)"/',
-              $prev->getMessage(),
-              $matches
-            );
-            [$_, $writerType, $readerType] = $matches;
-
-            echo ">>> Skipping message. writerType: $writerType, readerType: $readerType" . PHP_EOL;
-        } catch (Throwable $t) {
-            // ....
-        }
-
-    }
-
-    private function handlePartitionEof(): string
-    {
-        return 'No more messages; will wait for more';
-    }
-
-    private function handleTimeOut(): string
-    {
-        Return 'Time out';
-    }
-
-    private function handleError(Message $message, BaseRecord $record)
-    {
-        if ($this->errorCallback) {
-            ($this->errorCallback)();
-        }
-        throw new KafkaException(sprintf('%s for record %s', $message->errstr(), $record->name()), $message->err);
-    }
-
-    private function createKafkaConsumer(): KafkaConsumer
-    {
-        return new KafkaConsumer($this->config);
-    }
 }
