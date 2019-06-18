@@ -4,6 +4,7 @@ namespace App\Consumer;
 
 use App\Config;
 use App\Serializers\KafkaSerializerInterface;
+use Psr\Log\LoggerInterface;
 use RdKafka\TopicConf;
 
 class ConsumerConfig extends Config
@@ -29,9 +30,10 @@ class ConsumerConfig extends Config
     public function __construct(
       string $brokers,
       string $groupId,
-      KafkaSerializerInterface $serializer
+      KafkaSerializerInterface $serializer,
+      LoggerInterface $logger = null
     ) {
-        parent::__construct($brokers, $serializer);
+        parent::__construct($brokers, $serializer, $logger);
         $this->groupId = $groupId;
         $defaultTopicConfig = $this->createDefaultTopicConfig();
         $this->setDefaultTopicConf($defaultTopicConfig);
@@ -39,50 +41,63 @@ class ConsumerConfig extends Config
 
     }
 
-    public function setPartition(int $partition)
-    {
+    public
+    function setPartition(
+      int $partition
+    ) {
         $this->partition = $partition;
         return $this;
     }
 
-    public function getOffset(): int
+    public
+    function getOffset(): int
     {
         return $this->offset ?? static::DEFAULT_OFFSET;
     }
 
-    public function setOffset(int $offset)
-    {
+    public
+    function setOffset(
+      int $offset
+    ) {
         $this->offset = $offset;
         return $this;
     }
 
-    public function getTimeout(): int
+    public
+    function getTimeout(): int
     {
         return $this->timeout ?? static::DEFAULT_TIMEOUT;
     }
 
-    public function setTimeout(int $timeout)
-    {
+    public
+    function setTimeout(
+      int $timeout
+    ) {
         $this->timeout = $timeout;
         return $this;
     }
 
-    public function setOffsetReset(string $reset)
-    {
+    public
+    function setOffsetReset(
+      string $reset
+    ) {
         $this->offsetReset = $reset;
     }
 
-    public function getOffsetReset(): string
+    public
+    function getOffsetReset(): string
     {
         return $this->offsetReset ?? static::DEFAULT_OFfSET_RESET;
     }
 
-    public function getGroupId(): string
+    public
+    function getGroupId(): string
     {
         return $this->groupId;
     }
 
-    public function setGroupId(
+    public
+    function setGroupId(
       string $groupId
     ) {
         $this->groupId = $groupId;
@@ -90,7 +105,8 @@ class ConsumerConfig extends Config
         return $this;
     }
 
-    private function createDefaultTopicConfig(): TopicConf
+    private
+    function createDefaultTopicConfig(): TopicConf
     {
         $topicConfig = new TopicConf();
         $topicConfig->set('auto.offset.reset', $this->getOffsetReset());

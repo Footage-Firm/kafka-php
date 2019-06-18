@@ -2,7 +2,9 @@
 
 namespace App;
 
+use App\Logger\Logger;
 use App\Serializers\KafkaSerializerInterface;
+use Psr\Log\LoggerInterface;
 use RdKafka\Conf as KafkaConfig;
 
 // https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
@@ -18,20 +20,22 @@ class Config extends KafkaConfig
 
     protected $serializer;
 
+    protected $logger;
+
     protected $kafkaConfig;
 
     protected $shouldRegisterMissingSchemas = false;
 
     protected $shouldRegisterMissingSubjects = false;
 
-    public function __construct(string $brokers, KafkaSerializerInterface $serializer)
+    public function __construct(string $brokers, KafkaSerializerInterface $serializer, LoggerInterface $logger = null)
     {
         //Ignore IDE squiggly, there is a constructor its just not int he stub extension
         parent::__construct();
 
         $this->serializer = $serializer;
         $this->setDefaultBrokers($brokers)->withLowLatencySettings();
-
+        $this->logger = $logger ?? new Logger();
     }
 
     // https://github.com/arnaud-lb/php-rdkafka#performance--low-latency-settings
