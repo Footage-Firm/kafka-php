@@ -9,7 +9,6 @@ use App\Producer\Producer;
 use App\Producer\ProducerConfig;
 use App\Serializers\AvroSerializer;
 use DateTime;
-use Faker\Factory;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
@@ -28,12 +27,14 @@ function produce()
     $schemaRegistryPassword = 'zlb2vwhmnp6opkvq';
     //    $brokers = 'broker';
     $brokers = 'kafka-development-storyblocks-16cb.aivencloud.com:18364';
-    //    $topic = 'user-event';
     $topic = 'bbatest';
 
-    $caLocation = '/opt/project/ca.pem';
-    $certLocation = '/opt/project/service.cert';
-    $keyLocation = '/opt/project/service.key';
+    //    $caLocation = '/opt/project/ca.pem';
+    $caLocation = 'ca.pem';
+    //    $certLocation = '/opt/project/service.cert';
+    $certLocation = 'service.cert';
+    //    $keyLocation = '/opt/project/service.key';
+    $keyLocation = 'service.key';
     $client = new Client(['base_uri' => $schemaRegistryUri, 'auth' => [$schemaRegistryUser, $schemaRegistryPassword]]);
     $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     $serializer = new AvroSerializer($registry, true, true);
@@ -45,21 +46,19 @@ function produce()
         if ($message->err) {
             var_dump($message);
         } else {
-            echo 'Looks like it worked' . PHP_EOL;
+            //worked
         }
 
     });
-
+    $config->setPartition(1);
     $producer = new Producer($config);
 
-    $faker = Factory::create();
-
-    for ($i = 1; $i <= 10; $i++) {
+    for ($i = 0; $i <= 1000; $i++) {
+        print "producing $i\n";
         $date = new DateTime();
         $d = $date->format('Y-m-d H:i:s');
-        echo "Producing topic: $topic" . PHP_EOL;
         $meta1 = (new SharedMeta())->setUuid($d . '-' . $i);
-        $userEventV1 = (new UserEvent())->setUserId($faker->randomDigit)->setMeta($meta1);
+        $userEventV1 = (new UserEvent())->setUserId($i)->setMeta($meta1)->setKey('key2');
 
         $producer->fire($topic, $userEventV1);
     }

@@ -12,7 +12,7 @@ class ConsumerConfig extends Config
     protected const DEFAULT_OFFSET = RD_KAFKA_OFFSET_BEGINNING;
 
     // todo - what is a sane default timeout?
-    protected const DEFAULT_TIMEOUT = 10000;
+    protected const DEFAULT_TIMEOUT = 1000;
 
     protected const DEFAULT_OFfSET_RESET = 'smallest';
 
@@ -39,9 +39,8 @@ class ConsumerConfig extends Config
 
     }
 
-    public function setPartition(
-      int $partition
-    ) {
+    public function setPartition(int $partition)
+    {
         $this->partition = $partition;
         return $this;
     }
@@ -51,9 +50,8 @@ class ConsumerConfig extends Config
         return $this->offset ?? static::DEFAULT_OFFSET;
     }
 
-    public function setOffset(
-      int $offset
-    ) {
+    public function setOffset(int $offset)
+    {
         $this->offset = $offset;
         return $this;
     }
@@ -63,16 +61,14 @@ class ConsumerConfig extends Config
         return $this->timeout ?? static::DEFAULT_TIMEOUT;
     }
 
-    public function setTimeout(
-      int $timeout
-    ) {
+    public function setTimeout(int $timeout)
+    {
         $this->timeout = $timeout;
         return $this;
     }
 
-    public function setOffsetReset(
-      string $reset
-    ) {
+    public function setOffsetReset(string $reset)
+    {
         $this->offsetReset = $reset;
     }
 

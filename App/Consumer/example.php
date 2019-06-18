@@ -21,19 +21,38 @@ function consume()
     //    $brokers = 'broker';
     $brokers = 'kafka-development-storyblocks-16cb.aivencloud.com:18364';
     //    $topic = 'user-event';
-    $caLocation = '/opt/project/ca.pem';
-    $certLocation = '/opt/project/service.cert';
-    $keyLocation = '/opt/project/service.key';
-
+    //    $caLocation = '/opt/project/ca.pem';
+    $caLocation = '/../../ca.pem';
+    //    $certLocation = '/opt/project/service.cert';
+    $certLocation = '/../../service.cert';
+    //    $keyLocation = '/opt/project/service.key';
+    $keyLocation = '/../../service.key';
     $client = new Client(['base_uri' => $schemaRegistryUri, 'auth' => [$schemaRegistryUser, $schemaRegistryPassword]]);
     $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     $serializer = new AvroSerializer($registry);//, true, true);
 
-    $config = new ConsumerConfig($brokers, 'brendanGroup', $serializer);
+    $config = new ConsumerConfig($brokers, 'ng', $serializer);
     $config->setSslData($caLocation, $certLocation, $keyLocation);
+    $config->setRebalanceCb(function (RdKafka\KafkaConsumer $kafka, $err, array $partitions = null)
+    {
+        switch ($err) {
+            case RD_KAFKA_RESP_ERR__ASSIGN_PARTITIONS:
+                echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Assign: ";
+                var_dump($partitions);
+                $kafka->assign($partitions);
+                break;
 
+            case RD_KAFKA_RESP_ERR__REVOKE_PARTITIONS:
+                echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Revoke: ";
+                var_dump($partitions);
+                $kafka->assign(null);
+                break;
+
+            default:
+                throw new \Exception($err);
+        }
+    });
     $topics = ['bbatest'];
-
 
     echo 'Consuming topics: ' . implode(',', $topics) . PHP_EOL;
 
@@ -41,10 +60,7 @@ function consume()
 
     $consumer->onSuccess(function (UserEvent $userEvent)
     {
-        print "OK success";
-        $x = json_encode($userEvent, JSON_PRETTY_PRINT) . PHP_EOL;
-        var_dump($x);
-        return $x;
+        print $userEvent->getUserId() . ", " . PHP_EOL;
     });
     $consumer->onError(function ()
     {

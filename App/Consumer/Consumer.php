@@ -56,7 +56,6 @@ class Consumer
     {
         switch ($message->err) {
             case RD_KAFKA_RESP_ERR_NO_ERROR:
-                print "NO error";
                 return $this->handleNoError($message, $record);
                 break;
             case RD_KAFKA_RESP_ERR__PARTITION_EOF:
@@ -66,7 +65,6 @@ class Consumer
                 $this->handleTimeOut();
                 break;
             default:
-                print "error";
                 $this->handleError($message, $record);
                 break;
         }
@@ -107,7 +105,12 @@ class Consumer
         try {
 
             $decoded = $this->serializer->deserialize($message->payload, $record);
-            return ($this->successCallback)($decoded);
+            try {
+                ($this->successCallback)($decoded);
+            } catch (Throwable $t) {
+                print $t->getMessage();
+            }
+
         } catch (AvroDecodingException $e) {
             $prev = $e->getPrevious();
 
@@ -149,35 +152,4 @@ class Consumer
     {
         return new KafkaConsumer($this->config);
     }
-
-    //    private function getPartitionsInfo()
-    //    {
-    //        $partitionsInfo = [];
-    //
-    //        foreach ($this->kafkaConsumer->getMetadata(true, null, 10000)->getTopics() as $topic) {
-    //            $partitionsInfo[$topic->getTopic()] = count($topic->getPartitions());
-    //        }
-    //
-    //        return $partitionsInfo;
-    //    }
-    //
-    //    private function determineMaxPartitions(
-    //      array $topics = null
-    //    ) {
-    //        $metaData = $this->kafkaConsumer->getMetadata(false, null, 12000);
-    //        $allTopics = $metaData->getTopics();
-    //        $max = 1;
-    //        foreach ($allTopics as $topic) {
-    //            /** @var \RdKafka\Metadata\Topic $topic */
-    //            if (!in_array($topic->getTopic(), $topics)) {
-    //                continue;
-    //            }
-    //            $numPartitions = count($topic->getPartitions());
-    //            if ($numPartitions > $max) {
-    //                $max = $numPartitions;
-    //            }
-    //        }
-    //        return $max;
-    //
-    //    }
 }

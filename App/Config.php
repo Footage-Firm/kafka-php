@@ -37,7 +37,7 @@ class Config extends KafkaConfig
     // https://github.com/arnaud-lb/php-rdkafka#performance--low-latency-settings
     public function withLowLatencySettings(): Config
     {
-        $this->setSocketTimeout(self::LOW_LATENCY_SOCKET_TIMEOUT);
+        // $this->setSocketTimeout(self::LOW_LATENCY_SOCKET_TIMEOUT);
 
         if (function_exists('pcntl_sigprocmask')) {
             pcntl_sigprocmask(SIG_BLOCK, [SIGIO]);

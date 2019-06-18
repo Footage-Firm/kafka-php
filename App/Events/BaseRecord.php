@@ -8,6 +8,7 @@ use ReflectionProperty;
 
 abstract class BaseRecord implements JsonSerializable
 {
+
     private $key;
 
     abstract public function schema(): string;
@@ -18,9 +19,10 @@ abstract class BaseRecord implements JsonSerializable
         return $reflect->getShortName();
     }
 
-    public function setKey(?string $key): void
+    public function setKey(?string $key)
     {
         $this->key = $key;
+        return $this;
     }
 
     public function getKey(): ?string
