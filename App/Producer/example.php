@@ -21,20 +21,24 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 function produce()
 {
 
+    $topic = 'forPhpTesting';
     //    $schemaRegistryUri = 'schema-registry:8081';
-    $schemaRegistryUri = 'https://kafka-development-storyblocks-16cb.aivencloud.com:18367';
-    $schemaRegistryUser = 'avnadmin';
-    $schemaRegistryPassword = 'zlb2vwhmnp6opkvq';
     //    $brokers = 'broker';
-    $brokers = 'kafka-development-storyblocks-16cb.aivencloud.com:18364';
-    $topic = 'bbatest';
-
-    //    $caLocation = '/opt/project/ca.pem';
-    $caLocation = 'ca.pem';
+    //    $topic = 'bbatest';
     //    $certLocation = '/opt/project/service.cert';
-    $certLocation = 'service.cert';
     //    $keyLocation = '/opt/project/service.key';
+    //    $caLocation = '/opt/project/ca.pem';
+    //    $client = new Client(['base_uri' => $schemaRegistryUri]);
+
+    $schemaRegistryUri = 'https://sb-kafka-videoblocks-c6b6.aivencloud.com:26284';
+    $schemaRegistryUser = 'avnadmin';
+    $schemaRegistryPassword = 'ohsjbxv4adso0shh';
+    $brokers = 'sb-kafka-videoblocks-c6b6.aivencloud.com:26281';
+    $caLocation = 'ca.pem';
+    $certLocation = 'service.cert';
     $keyLocation = 'service.key';
+
+
     $client = new Client(['base_uri' => $schemaRegistryUri, 'auth' => [$schemaRegistryUser, $schemaRegistryPassword]]);
     $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     $serializer = new AvroSerializer($registry, true, true);
@@ -50,18 +54,26 @@ function produce()
         }
 
     });
-    $config->setPartition(1);
     $producer = new Producer($config);
 
+    //    for ($i = 0; $i <= 1000; $i++) {
+    //        print "producing $i\n";
+    //        $date = new DateTime();
+    //        $d = $date->format('Y-m-d H:i:s');
+    //        $meta1 = (new SharedMeta())->setUuid($d . '-' . $i);
+    //        $userEventV1 = (new UserEvent())->setUserId($i)->setMeta($meta1)->setKey('key2');
+    //
+    //        $producer->produce($topic, $userEventV1);
+    //    }
+
+    $events = [];
     for ($i = 0; $i <= 1000; $i++) {
-        print "producing $i\n";
         $date = new DateTime();
         $d = $date->format('Y-m-d H:i:s');
-        $meta1 = (new SharedMeta())->setUuid($d . '-' . $i);
-        $userEventV1 = (new UserEvent())->setUserId($i)->setMeta($meta1)->setKey('key2');
-
-        $producer->fire($topic, $userEventV1);
+        $meta = (new SharedMeta())->setUuid($d . '-' . $i);
+        $events[] = (new UserEvent())->setUserId($i)->setMeta($meta);
     }
+    $producer->produceMany($topic, $events);
 }
 
 

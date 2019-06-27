@@ -38,12 +38,9 @@ class ProducerConfig extends Config
 
     private $messageFlag;
 
-    private $ackLevel;
-
-
     public function getLogLevel(): ?int
     {
-        return $this->logLevel;
+        return $this->logLevel ?? LOG_DEBUG;
     }
 
     public function setLogLevel(int $logLevel): ProducerConfig
@@ -57,7 +54,7 @@ class ProducerConfig extends Config
         return $this->partition ?? static::DEFAULT_PARTITION;
     }
 
-    public function setPartition(int $partition)
+    public function setPartition(int $partition): ProducerConfig
     {
         $this->partition = $partition;
         return $this;
@@ -77,21 +74,15 @@ class ProducerConfig extends Config
     }
 
     // Signature of the callback function is function (RdKafka\RdKafka $kafka, RdKafka\Message $message);
-    public function setDeliveryReportCallback(callable $callback): void
+    public function setDeliveryReportCallback(callable $callback): ProducerConfig
     {
         $this->setDrMsgCb($callback);
-    }
-
-    public function getAckLevel(): int
-    {
-        return $this->ackLevel ?? self::DEFAULT_ACK_LEVEL;
-    }
-
-    public function setAckLevel(int $ackLevel)
-    {
-        $this->set('ack', $ackLevel);
-        $this->ackLevel = $ackLevel;
         return $this;
+    }
+
+    public function setAckLevel(int $ackLevel): Config
+    {
+        return $this->set('ack', $ackLevel);
     }
 }
 

@@ -34,24 +34,8 @@ class Config extends KafkaConfig
         parent::__construct();
 
         $this->serializer = $serializer;
-        $this->setDefaultBrokers($brokers)->withLowLatencySettings();
+        $this->setDefaultBrokers($brokers);
         $this->logger = $logger ?? new Logger();
-    }
-
-    // https://github.com/arnaud-lb/php-rdkafka#performance--low-latency-settings
-    public function withLowLatencySettings(): Config
-    {
-        // $this->setSocketTimeout(self::LOW_LATENCY_SOCKET_TIMEOUT);
-
-        if (function_exists('pcntl_sigprocmask')) {
-            pcntl_sigprocmask(SIG_BLOCK, [SIGIO]);
-            $this->set('internal.termination.signal', SIGIO);
-            $this->setInternalTerminationSignal(SIGIO);
-        } else {
-            $this->setQueueBufferingMax(self::LOW_LATENCY_QUEUE_BUFFERING_MAX);
-        }
-
-        return $this;
     }
 
     public function getBrokers(): string

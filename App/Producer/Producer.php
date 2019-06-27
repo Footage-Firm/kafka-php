@@ -24,7 +24,7 @@ class Producer
         $this->kafkaProducer = $this->createKafkaProducer();
     }
 
-    public function fire(string $topic, BaseRecord $record): void
+    public function produce(string $topic, BaseRecord $record): void
     {
         $topicProducer = $this->kafkaProducer->newTopic($topic);
         $encodedRecord = $this->encodeRecord($record);
@@ -35,7 +35,25 @@ class Producer
           $record->getKey()
         );
         $this->kafkaProducer->poll(0);
+    }
 
+    public function produceMany(string $topic, array $records)
+    {
+        $topicProducer = $this->kafkaProducer->newTopic($topic);
+        foreach ($records as $record) {
+            $encodedRecord = $this->encodeRecord($record);
+            $topicProducer->produce(
+              $this->config->getPartition(),
+              $this->config->getMessageFlag(),
+              $encodedRecord,
+              $record->getKey()
+            );
+            $this->kafkaProducer->poll(0);
+        }
+
+        while ($this->kafkaProducer->getOutQLen() > 0) {
+            $this->kafkaProducer->poll(50);
+        }
     }
 
     public function getMetaData(bool $allTopics, ?Topic $onlyTopic, int $timeoutMs): Metadata
