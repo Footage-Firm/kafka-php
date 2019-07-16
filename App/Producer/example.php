@@ -21,7 +21,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 function produce()
 {
 
-    $topic = 'forPhpTesting';
+    $topic = 'php';
     //    $schemaRegistryUri = 'schema-registry:8081';
     //    $brokers = 'broker';
     //    $topic = 'bbatest';
@@ -50,7 +50,7 @@ function produce()
         if ($message->err) {
             var_dump($message);
         } else {
-            //worked
+            print "it worked";
         }
 
     });
@@ -67,7 +67,7 @@ function produce()
     //    }
 
     $events = [];
-    for ($i = 0; $i <= 1000; $i++) {
+    for ($i = 0; $i <= 5; $i++) {
         $date = new DateTime();
         $d = $date->format('Y-m-d H:i:s');
         $meta = (new SharedMeta())->setUuid($d . '-' . $i);
