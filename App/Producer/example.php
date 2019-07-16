@@ -30,10 +30,10 @@ function produce()
     //    $caLocation = '/opt/project/ca.pem';
     //    $client = new Client(['base_uri' => $schemaRegistryUri]);
 
-    $schemaRegistryUri = 'https://sb-kafka-videoblocks-c6b6.aivencloud.com:26284';
+    $schemaRegistryUri = 'https://brendan-brendan-1b9f.aivencloud.com:28101';
     $schemaRegistryUser = 'avnadmin';
-    $schemaRegistryPassword = 'ohsjbxv4adso0shh';
-    $brokers = 'sb-kafka-videoblocks-c6b6.aivencloud.com:26281';
+    $schemaRegistryPassword = 'szmvarz7wu1y3izy';
+    $brokers = 'brendan-brendan-1b9f.aivencloud.com:28098';
     $caLocation = 'ca.pem';
     $certLocation = 'service.cert';
     $keyLocation = 'service.key';
