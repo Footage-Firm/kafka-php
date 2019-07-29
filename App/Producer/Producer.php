@@ -2,52 +2,53 @@
 
 namespace App\Producer;
 
+use App\Common\TopicFormatter;
+use App\Common\Utils;
 use App\Events\BaseRecord;
-use RdKafka\Metadata;
+use App\Producer\Exceptions\ProducerException;
+use App\Serializers\KafkaSerializerInterface;
+use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
-use RdKafka\Topic;
 
 
 class Producer
 {
 
-    private $config;
+    private $kafkaProducer;
 
     private $serializer;
 
-    private $kafkaProducer;
+    private $logger;
 
-    public function __construct(ProducerConfig $config)
-    {
-        $this->config = $config;
-        $this->serializer = $config->getSerializer();
-        $this->kafkaProducer = $this->createKafkaProducer();
+    public function __construct(
+      KafkaProducer $kafkaProducer,
+      KafkaSerializerInterface $serializer,
+      LoggerInterface $logger
+    ) {
+        $this->serializer = $serializer;
+        $this->kafkaProducer = $kafkaProducer;
+        $this->logger = $logger;
     }
 
-    public function produce(string $topic, BaseRecord $record): void
+    public function produce(array $records, string $topic = '')
     {
-        $topicProducer = $this->kafkaProducer->newTopic($topic);
-        $encodedRecord = $this->encodeRecord($record);
-        $topicProducer->produce(
-          $this->config->getPartition(),
-          $this->config->getMessageFlag(),
-          $encodedRecord,
-          $record->getKey()
-        );
-        $this->kafkaProducer->poll(0);
-    }
 
-    public function produceMany(string $topic, array $records)
-    {
+        $this->validateProduceRequest($records, $topic);
+
+        if (count($records) > 0) {
+            $topic = $topic ?? TopicFormatter::topicFromRecord($records[0]);
+        }
+
         $topicProducer = $this->kafkaProducer->newTopic($topic);
+
         foreach ($records as $record) {
             $encodedRecord = $this->encodeRecord($record);
-            $topicProducer->produce(
-              $this->config->getPartition(),
-              $this->config->getMessageFlag(),
-              $encodedRecord,
-              $record->getKey()
-            );
+
+            /*
+             * RD_KAFKA_PARTITION_UA means kafka will automatically decide to which partition the record will be produced.
+             * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
+             */
+            $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
             $this->kafkaProducer->poll(0);
         }
 
@@ -56,25 +57,29 @@ class Producer
         }
     }
 
-    public function getMetaData(bool $allTopics, ?Topic $onlyTopic, int $timeoutMs): Metadata
-    {
-        return $this->kafkaProducer->getMetadata($allTopics, $onlyTopic, $timeoutMs);
-    }
-
-    private function createKafkaProducer(): KafkaProducer
-    {
-        $producer = new KafkaProducer($this->config);
-
-        $logLevel = $this->config->getLogLevel();
-        if ($logLevel) {
-            $producer->setLogLevel(LOG_DEBUG);
-        }
-
-        return $producer;
-    }
-
     private function encodeRecord(BaseRecord $record): string
     {
         return $this->serializer->serialize($record);
+    }
+
+    /**
+     * @param  BaseRecord[]  $records
+     * @param  string  $topic
+     *
+     * @throws \App\Producer\Exceptions\ProducerException
+     */
+    private function validateProduceRequest(array $records, string $topic): void
+    {
+        if (!$topic && count($records) === 0) {
+            throw new ProducerException('Unable to use default topic when no records are being produced');
+        }
+
+        array_reduce($records, function ($prev, $cur)
+        {
+            if ($prev && Utils::className($cur) !== Utils::className($prev)) {
+                throw new ProducerException('Cannot produce different types of records at the same time.');
+            }
+            return $cur;
+        });
     }
 }

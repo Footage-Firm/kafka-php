@@ -31,7 +31,7 @@ class ProducerBuilder
         ]);
         $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
         $serializer = new AvroSerializer($registry, true, true);
-        $this->config->set('ack', -1); //todo -- comment/constant so this is clear
+        $this->config->set('acks', -1); //todo -- comment/constant so this is clear
         $this->config->set('enable.idempotence', true);
         // When set to true, the producer will ensure that messages are successfully produced exactly once and in the original produce order. The following configuration properties are adjusted automatically (if not modified by the user) when idempotence is enabled: max.in.flight.requests.per.connection=5 (must be less than or equal to 5), retries=INT32_MAX (must be greater than 0), acks=all, queuing.strategy=fifo. Producer instantation will fail if user-supplied configuration is incompatible. 
     }

@@ -3,20 +3,11 @@
 namespace Tests\Common;
 
 use App\Common\TopicFormatter;
-use Faker\Factory;
-use PHPUnit\Framework\TestCase;
 use Tests\Fakes\FakeRecord;
+use Tests\TestCaseWithFaker;
 
-class TestTopicFormatter extends TestCase
+class TestTopicFormatter extends TestCaseWithFaker
 {
-
-    private $faker;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        $this->faker = Factory::create();
-    }
 
     public function testTopicFromRecord()
     {
