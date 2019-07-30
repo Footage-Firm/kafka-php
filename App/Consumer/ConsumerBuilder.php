@@ -26,14 +26,17 @@ class ConsumerBuilder extends KafkaBuilder
 
     private $offsetReset;
 
+    private $topicConfig;
+
     public function __construct(
       array $brokers,
       string $groupId,
       string $schemaRegistryUrl,
       LoggerInterface $logger,
-      Conf $config = null
+      Conf $config = null,
+      TopicConf $topicConf = null
     ) {
-        parent::__construct($brokers, $config, $schemaRegistryUrl, $logger);
+        parent::__construct($brokers, $schemaRegistryUrl, $logger, $config);
         $this->groupId = $groupId;
         $defaultTopicConfig = $this->createDefaultTopicConfig();
         $this->setGroupId($groupId);
@@ -42,40 +45,13 @@ class ConsumerBuilder extends KafkaBuilder
 
     public function build(): Consumer
     {
-        $kafkaProducer = new KafkaConsumer($this->config);
-        return new Consumer($kafkaProducer, $this->serializer, $this->logger);
-    }
-
-    public function setPartition(int $partition)
-    {
-        $this->partition = $partition;
-        return $this;
-    }
-
-    public function getTimeout(): int
-    {
-        return $this->timeout ?? static::DEFAULT_TIMEOUT;
-    }
-
-    public function setTimeout(int $timeout)
-    {
-        $this->timeout = $timeout;
-        return $this;
-    }
-
-    public function setOffsetReset(string $reset)
-    {
-        $this->offsetReset = $reset;
+        $kafkaConsumer = new KafkaConsumer($this->config);
+        return new Consumer($kafkaConsumer, $this->serializer, $this->logger);
     }
 
     public function getOffsetReset(): string
     {
         return $this->offsetReset ?? static::DEFAULT_OFfSET_RESET;
-    }
-
-    public function getGroupId(): string
-    {
-        return $this->groupId;
     }
 
     public function setGroupId(string $groupId)
@@ -85,10 +61,6 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function getLogger(): LoggerInterface
-    {
-        return $this->logger;
-    }
 
     private function createDefaultTopicConfig(): TopicConf
     {

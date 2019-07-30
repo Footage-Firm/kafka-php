@@ -10,28 +10,42 @@ use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
 use GuzzleHttp\Client;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
+use RdKafka\TopicConf;
 
 abstract class KafkaBuilder
 {
 
     protected $config;
 
+    protected $topicConfig;
+
     protected $serializer;
 
     protected $logger;
 
-    public function __construct(array $brokers, Conf $config, string $schemaRegistryUrl, LoggerInterface $logger)
-    {
-        $this->config = $config ?? new Conf();
+    public function __construct(
+      array $brokers,
+      string $schemaRegistryUrl,
+      LoggerInterface $logger,
+      Conf $config = null,
+      TopicConf $topicConfig = null
+    ) {
         $this->serializer = $this->createSerializer($schemaRegistryUrl);
         $this->logger = $logger;
-
+        $this->config = $config ?? new Conf();
+        $this->topicConfig = $topicConfig ?? new TopicConf();
         $this->config->set('metadata.broker.list', implode(',', $brokers));
     }
 
-    public function onKafkaError(callable $callback): KafkaBuilder
+    public function onKafkaError(callable $callback): self
     {
         $this->config->setErrorCb($callback);
+        return $this;
+    }
+
+    public function setStatsCallback(callable $callback): self
+    {
+        $this->config->setStatsCb($callback);
         return $this;
     }
 
