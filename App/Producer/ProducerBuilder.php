@@ -2,6 +2,7 @@
 
 namespace App\Producer;
 
+use App\Common\KafkaBuilder;
 use App\Serializers\AvroSerializer;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
@@ -11,18 +12,19 @@ use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\Producer as KafkaProducer;
 
-class ProducerBuilder
+class ProducerBuilder extends KafkaBuilder
 {
 
-    private $config;
 
     private $serializer;
 
     private $logger;
 
-    public function __construct(array $brokers, string $schemaRegistryUri, LoggerInterface $logger)
+    public function __construct(array $brokers, string $schemaRegistryUri, LoggerInterface $logger, Conf $config = null)
     {
-        $this->config = new Conf();
+        parent::__construct($config);
+
+
         $this->config->set('metadata.broker.list', implode(',', $brokers));
         $client = new Client([
           'base_uri' => $schemaRegistryUri,

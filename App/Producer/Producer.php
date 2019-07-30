@@ -2,6 +2,7 @@
 
 namespace App\Producer;
 
+use App\Common\KafkaListener;
 use App\Common\TopicFormatter;
 use App\Common\Utils;
 use App\Events\BaseRecord;
@@ -9,24 +10,24 @@ use App\Producer\Exceptions\ProducerException;
 use App\Serializers\KafkaSerializerInterface;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
+use Throwable;
 
 
-class Producer
+class Producer extends KafkaListener
 {
 
-    private $kafkaProducer;
+    private $kafkaClient;
 
     private $serializer;
 
-    private $logger;
-
     public function __construct(
-      KafkaProducer $kafkaProducer,
+      KafkaProducer $kafkaClient,
       KafkaSerializerInterface $serializer,
       LoggerInterface $logger
     ) {
+        parent::__construct($logger);
         $this->serializer = $serializer;
-        $this->kafkaProducer = $kafkaProducer;
+        $this->kafkaClient = $kafkaClient;
         $this->logger = $logger;
     }
 
@@ -39,7 +40,7 @@ class Producer
             $topic = $topic ?? TopicFormatter::topicFromRecord($records[0]);
         }
 
-        $topicProducer = $this->kafkaProducer->newTopic($topic);
+        $topicProducer = $this->kafkaClient->newTopic($topic);
 
         foreach ($records as $record) {
             $encodedRecord = $this->encodeRecord($record);
@@ -49,17 +50,28 @@ class Producer
              * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
              */
             $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
-            $this->kafkaProducer->poll(0);
+            $this->kafkaClient->poll(0);
         }
 
-        while ($this->kafkaProducer->getOutQLen() > 0) {
-            $this->kafkaProducer->poll(50);
+        while ($this->kafkaClient->getOutQLen() > 0) {
+            $this->kafkaClient->poll(50);
+        }
+    }
+
+    private function assignCallback(): void
+    {
+        if ($this->disconnetCb) {
+            $this->kafkaClient->
         }
     }
 
     private function encodeRecord(BaseRecord $record): string
     {
-        return $this->serializer->serialize($record);
+        try {
+            return $this->serializer->serialize($record);
+        } catch (Throwable $t) {
+
+        }
     }
 
     /**
