@@ -2,12 +2,13 @@
 
 namespace App\Consumer;
 
-use App\Config;
-use App\Serializers\KafkaSerializerInterface;
+use App\Common\KafkaBuilder;
 use Psr\Log\LoggerInterface;
+use RdKafka\Conf;
+use RdKafka\KafkaConsumer;
 use RdKafka\TopicConf;
 
-class   ConsumerConfig extends Config
+class ConsumerBuilder extends KafkaBuilder
 {
 
     protected const DEFAULT_OFFSET = RD_KAFKA_OFFSET_BEGINNING;
@@ -15,11 +16,9 @@ class   ConsumerConfig extends Config
     // todo - what is a sane default timeout?
     protected const DEFAULT_TIMEOUT = 1000;
 
-    protected const DEFAULT_OFfSET_RESET = 'smallest';
+    protected const DEFAULT_OFfSET_RESET = 'earliest';
 
     private $partition;
-
-    private $offset;
 
     private $timeout;
 
@@ -28,33 +27,28 @@ class   ConsumerConfig extends Config
     private $offsetReset;
 
     public function __construct(
-      string $brokers,
+      array $brokers,
       string $groupId,
-      KafkaSerializerInterface $serializer,
-      LoggerInterface $logger = null
+      string $schemaRegistryUrl,
+      LoggerInterface $logger,
+      Conf $config = null
     ) {
-        parent::__construct($brokers, $serializer, $logger);
+        parent::__construct($brokers, $config, $schemaRegistryUrl, $logger);
         $this->groupId = $groupId;
         $defaultTopicConfig = $this->createDefaultTopicConfig();
-        $this->setDefaultTopicConf($defaultTopicConfig);
         $this->setGroupId($groupId);
 
+    }
+
+    public function build(): Consumer
+    {
+        $kafkaProducer = new KafkaConsumer($this->config);
+        return new Consumer($kafkaProducer, $this->serializer, $this->logger);
     }
 
     public function setPartition(int $partition)
     {
         $this->partition = $partition;
-        return $this;
-    }
-
-    public function getOffset(): int
-    {
-        return $this->offset ?? static::DEFAULT_OFFSET;
-    }
-
-    public function setOffset(int $offset)
-    {
-        $this->offset = $offset;
         return $this;
     }
 
@@ -95,7 +89,7 @@ class   ConsumerConfig extends Config
     {
         return $this->logger;
     }
-    
+
     private function createDefaultTopicConfig(): TopicConf
     {
         $topicConfig = new TopicConf();

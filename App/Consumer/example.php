@@ -2,7 +2,7 @@
 
 
 use App\Consumer\Consumer;
-use App\Consumer\ConsumerConfig;
+use App\Consumer\ConsumerBuildeer;
 use App\Events\Poc\User\V2\UserEvent;
 use App\Serializers\AvroSerializer;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
