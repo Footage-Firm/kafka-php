@@ -15,12 +15,16 @@ use RdKafka\TopicConf;
 abstract class KafkaBuilder
 {
 
+    /** @var \RdKafka\Conf */
     protected $config;
 
+    /** @var \RdKafka\TopicConf */
     protected $topicConfig;
 
+    /** @var \App\Serializers\KafkaSerializerInterface */
     protected $serializer;
 
+    /** @var \Psr\Log\LoggerInterface */
     protected $logger;
 
     public function __construct(
