@@ -27,6 +27,8 @@ abstract class KafkaBuilder
     /** @var \Psr\Log\LoggerInterface */
     protected $logger;
 
+    abstract protected function defaultTopicConfig(): TopicConf;
+
     public function __construct(
       array $brokers,
       string $schemaRegistryUrl,
@@ -37,11 +39,19 @@ abstract class KafkaBuilder
         $this->serializer = $this->createSerializer($schemaRegistryUrl);
         $this->logger = $logger;
         $this->config = $config ?? new Conf();
-        $this->topicConfig = $topicConfig ?? new TopicConf();
+        $this->topicConfig = $topicConfig ?? $this->defaultTopicConfig();
         $this->config->set('metadata.broker.list', implode(',', $brokers));
     }
 
-    public function onKafkaError(callable $callback): self
+    public function setSslData(string $caPath, string $certPath, string $keyPath): void
+    {
+        $this->config->set('security.protocol', 'ssl');
+        $this->config->set('ssl.ca.Path', $caPath);
+        $this->config->set('ssl.certificate.Path', $certPath);
+        $this->config->set('ssl.key.Path', $keyPath);
+    }
+
+    public function setKafkaErrorCallback(callable $callback): self
     {
         $this->config->setErrorCb($callback);
         return $this;
@@ -50,6 +60,12 @@ abstract class KafkaBuilder
     public function setStatsCallback(callable $callback): self
     {
         $this->config->setStatsCb($callback);
+        return $this;
+    }
+
+    public function enableDebug(): self
+    {
+        $this->config->set('debug', 'all');
         return $this;
     }
 

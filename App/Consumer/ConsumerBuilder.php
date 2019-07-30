@@ -38,13 +38,14 @@ class ConsumerBuilder extends KafkaBuilder
     ) {
         parent::__construct($brokers, $schemaRegistryUrl, $logger, $config);
         $this->groupId = $groupId;
-        $defaultTopicConfig = $this->createDefaultTopicConfig();
+        $this->topicConfig = $topicConf ?? $this->createDefaultTopicConfig();
         $this->setGroupId($groupId);
 
     }
 
     public function build(): Consumer
     {
+        $this->config->setDefaultTopicConf($this->topicConfig);
         $kafkaConsumer = new KafkaConsumer($this->config);
         return new Consumer($kafkaConsumer, $this->serializer, $this->logger);
     }
@@ -60,7 +61,6 @@ class ConsumerBuilder extends KafkaBuilder
         $this->set('group.id', $groupId);
         return $this;
     }
-
 
     private function createDefaultTopicConfig(): TopicConf
     {

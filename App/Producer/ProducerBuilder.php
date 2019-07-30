@@ -37,19 +37,8 @@ class ProducerBuilder extends KafkaBuilder
     public function build(): Producer
     {
         $kafkaProducer = new KafkaProducer($this->config);
-        //        $logLevel = $this->config->getLogLevel();
-        //        if ($logLevel) {
-        //            $producer->setLogLevel(LOG_DEBUG);
-        //        }
-        return new Producer($kafkaProducer, $this->serializer, $this->logger);
-    }
 
-    private function setSslData(string $caPath, string $certPath, string $keyPath): void
-    {
-        $this->config->set('security.protocol', 'ssl');
-        $this->config->set('ssl.ca.Path', $caPath);
-        $this->config->set('ssl.certificate.Path', $certPath);
-        $this->config->set('ssl.key.Path', $keyPath);
+        return new Producer($kafkaProducer, $this->serializer, $this->logger);
     }
 
     // Signature of the callback function is function (RdKafka\RdKafka $kafka, RdKafka\Message $message);
@@ -62,7 +51,7 @@ class ProducerBuilder extends KafkaBuilder
     public function setNumRetries(int $numRetries): self
     {
         $this->config->set('retries', self::DEFAULT_RETRIES);
-        return $this
+        return $this;
     }
 
 
