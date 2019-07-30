@@ -23,6 +23,9 @@ class Producer
     /** @var KafkaSerializerInterface */
     private $serializer;
 
+    /** @var \Psr\Log\LoggerInterface */
+    private $logger;
+
     public function __construct(
       KafkaProducer $kafkaClient,
       KafkaSerializerInterface $serializer,
@@ -30,6 +33,7 @@ class Producer
     ) {
         $this->serializer = $serializer;
         $this->kafkaClient = $kafkaClient;
+        $this->logger = $logger;
     }
 
     public function produce(array $records, string $topic = '', bool $produceFailureRecords = true)
