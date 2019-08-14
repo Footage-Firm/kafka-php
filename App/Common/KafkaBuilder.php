@@ -8,6 +8,7 @@ use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
 use GuzzleHttp\Client;
+use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\TopicConf;
@@ -32,12 +33,12 @@ abstract class KafkaBuilder
     public function __construct(
       array $brokers,
       string $schemaRegistryUrl,
-      LoggerInterface $logger,
+      LoggerInterface $logger = null,
       Conf $config = null,
       TopicConf $topicConfig = null
     ) {
         $this->serializer = $this->createSerializer($schemaRegistryUrl);
-        $this->logger = $logger;
+        $this->logger = $logger ?? new Logger('kafka');
         $this->config = $config ?? new Conf();
         $this->topicConfig = $topicConfig ?? $this->defaultTopicConfig();
         $this->config->set('metadata.broker.list', implode(',', $brokers));

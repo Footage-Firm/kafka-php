@@ -19,7 +19,7 @@ class FakeRecord extends BaseRecord
         return $this;
     }
 
-    public function setId(int $id): FakeRecord
+    public function setId($id): FakeRecord
     {
         $this->id = $id;
         return $this;

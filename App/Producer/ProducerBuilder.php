@@ -6,24 +6,23 @@ use App\Common\KafkaBuilder;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\Producer as KafkaProducer;
+use RdKafka\TopicConf;
 
 class ProducerBuilder extends KafkaBuilder
 {
 
     public const DEFAULT_RETRIES = 3;
-
-    /** @var \App\Serializers\KafkaSerializerInterface */
-    private $serializer;
-
-    /** @var LoggerInterface */
-    private $logger;
-
-    public function __construct(array $brokers, string $schemaRegistryUrl, LoggerInterface $logger, Conf $config = null)
-    {
+    
+    public function __construct(
+      array $brokers,
+      string $schemaRegistryUrl,
+      LoggerInterface $logger = null,
+      Conf $config = null
+    ) {
         parent::__construct($brokers, $schemaRegistryUrl, $logger, $config);
 
         $this->config->set('retries', self::DEFAULT_RETRIES);
-        $this->config->set('acks', -1); //todo -- comment/constant so this is clear
+        $this->config->set('acks', 'all'); //todo -- comment/constant so this is clear
 
         // From docs, capture this someplace: When set to true, the producer will ensure that messages are successfully produced exactly once
         // and in the original produce order. The following configuration properties are adjusted automatically (if not
@@ -55,4 +54,8 @@ class ProducerBuilder extends KafkaBuilder
     }
 
 
+    protected function defaultTopicConfig(): TopicConf
+    {
+        return new TopicConf();
+    }
 }
