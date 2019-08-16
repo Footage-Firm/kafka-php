@@ -12,7 +12,7 @@ class ProducerBuilder extends KafkaBuilder
 {
 
     public const DEFAULT_RETRIES = 3;
-    
+
     public function __construct(
       array $brokers,
       string $schemaRegistryUrl,
@@ -22,7 +22,7 @@ class ProducerBuilder extends KafkaBuilder
         parent::__construct($brokers, $schemaRegistryUrl, $logger, $config);
 
         $this->config->set('retries', self::DEFAULT_RETRIES);
-        $this->config->set('acks', 'all'); //todo -- comment/constant so this is clear
+        $this->config->set('acks', 'all');
 
         // From docs, capture this someplace: When set to true, the producer will ensure that messages are successfully produced exactly once
         // and in the original produce order. The following configuration properties are adjusted automatically (if not
