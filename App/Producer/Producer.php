@@ -34,7 +34,7 @@ class Producer
         $this->logger = $logger;
     }
 
-    public function produce(BaseRecord $record, string $topic = '', bool $produceFailureRecords = true): void
+    public function produce(BaseRecord $record, string $topic = null, bool $produceFailureRecords = true): void
     {
         $topic = $topic ?? TopicFormatter::topicFromRecord($record);
 

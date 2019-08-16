@@ -3,14 +3,16 @@
 namespace Tests\Producer\Unit;
 
 use App\Producer\Producer;
+use App\Producer\Producer as ProducerAlias;
 use App\Serializers\KafkaSerializerInterface;
+use Exception;
 use Mockery;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
+use Tests\Fakes\FakeRecord;
 use Tests\Fakes\FakeRecordFactory;
 use Tests\TestCaseWithFaker;
-use Throwable;
 
 class TestProducer extends TestCaseWithFaker
 {
@@ -38,7 +40,7 @@ class TestProducer extends TestCaseWithFaker
         $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class);
         $this->mockLogger = Mockery::mock(LoggerInterface::class);// new FakeLogger();
         $this->mockRecord = FakeRecordFactory::fakeRecord();
-        $this->mockEncodedRecord = $this->faker->word;
+        $this->fakeEncodedRecord = $this->faker->word;
     }
 
     /**
@@ -46,28 +48,53 @@ class TestProducer extends TestCaseWithFaker
      */
     public function testProducesCorrectRecord()
     {
-        $this->mockSerializer->shouldReceive('serialize')->andReturn($this->mockEncodedRecord);
+        $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);
 
         $mockTopicProducer = Mockery::mock(ProducerTopic::class);
-        $mockTopicProducer->shouldReceive('produce')->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->mockEncodedRecord]);
-
+        $mockTopicProducer->shouldReceive('produce')->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord]);
         $this->mockKafkaProducer->shouldReceive('newTopic')->andReturn($mockTopicProducer);
 
         $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);
         $producer->produce($this->mockRecord, $this->topic);
     }
 
-    public function testExceptionThrownIfEncodingError()
+
+    public function testExceptionThrownAndFailureProducedWhenInitialProductionFails()
     {
-        $this->mockSerializer->shouldReceive('serialize')->andThrow(Throwable::class);
+        $this->expectException(Exception::class);
 
+        $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);
+        $this->mockLogger->shouldReceive('error');
+
+        // Throw an error when trying to produce initially
+        $mockTopicProducer_Fail = Mockery::mock(ProducerTopic::class);
+        $mockTopicProducer_Fail->shouldReceive('produce')
+          ->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord])
+          ->times(1)
+          ->andThrow(Exception::class);
+
+        // Don't throw an error when producing the failure record
+        $mockTopicProducer_Success = Mockery::mock(ProducerTopic::class)->shouldIgnoreMissing();
+        $mockTopicProducer_Success->shouldReceive('produce')
+          ->times(1)
+          ->withArgs([
+            RD_KAFKA_PARTITION_UA,
+            0,
+            $this->fakeEncodedRecord,
+          ]);
+
+        $this->mockKafkaProducer->shouldReceive('newTopic')
+          ->with('fake-record')
+          ->andReturn($mockTopicProducer_Fail);
+
+        $this->mockKafkaProducer->shouldReceive('newTopic')
+          ->with('fail-FakeRecord')
+          ->andReturn($mockTopicProducer_Success);
+
+        /** @var ProducerAlias $producer */
+        $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);
+
+        $producer->produce(new FakeRecord());
     }
-
-    //    public function testFailureRecordIsProduce_WhenOptionIsTrue()
-    //    {
-    //
-    //        $this->mockSerializer->shouldReceive('serialize')->andThrow(Throwable::class);
-    //    }
-
 
 }
