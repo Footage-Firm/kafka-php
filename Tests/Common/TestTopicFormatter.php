@@ -29,14 +29,15 @@ class TestTopicFormatter extends TestCaseWithFaker
 
     public function testProduverFailureTopicFromRecord()
     {
-        $topic = TopicFormatter::producerFailureTopicFromRecord(new FakeRecord());
-        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . 'FakeRecord', $topic);
+        $originalTopic = 'some-topic';
+        $topic = TopicFormatter::producerFailureTopic($originalTopic);
+        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . 'some-topic', $topic);
     }
 
     public function testConsumerFailureTopicFromRecord()
     {
         $groupId = $this->faker->word;
-        $topic = TopicFormatter::consumerFailureTopicFromRecord(new FakeRecord(), $groupId);
+        $topic = TopicFormatter::consumerFailureTopic(new FakeRecord(), $groupId);
         self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . $groupId . '-FakeRecord', $topic);
     }
 }

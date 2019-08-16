@@ -67,6 +67,6 @@ class Producer
         $failure->setTopic($topic);
         $failure->setDetails($errorMsg);
 
-        $this->produce($failure, TopicFormatter::producerFailureTopicFromRecord($record), false);
+        $this->produce($failure, TopicFormatter::producerFailureTopic($topic), false);
     }
 }

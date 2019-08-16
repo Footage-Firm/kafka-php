@@ -11,7 +11,7 @@ class TopicFormatter
 
     public static function topicFromRecord(BaseRecord $record): string
     {
-        $className = Utils::className($record);
+        $className = self::className($record);
         return self::toKebabCase($className);
     }
 
@@ -20,14 +20,14 @@ class TopicFormatter
         return self::toKebabCase($recordName);
     }
 
-    public static function producerFailureTopicFromRecord(BaseRecord $record): string
+    public static function producerFailureTopic(string $originalTopic): string
     {
-        return self::FAILURE_TOPIC_PREFIX . Utils::className($record);
+        return self::FAILURE_TOPIC_PREFIX . $originalTopic;
     }
 
-    public static function consumerFailureTopicFromRecord(BaseRecord $record, string $groupId)
+    public static function consumerFailureTopic(BaseRecord $record, string $groupId)
     {
-        return sprintf('%s%s-%s', self::FAILURE_TOPIC_PREFIX, $groupId, Utils::className($record));
+        return sprintf('%s%s-%s', self::FAILURE_TOPIC_PREFIX, $groupId, self::className($record));
     }
 
     private static function toKebabCase(string $str): string
@@ -36,4 +36,10 @@ class TopicFormatter
         return strtolower(implode('-', $split));
     }
 
+    private static function className($class): string
+    {
+        $fqClassName = get_class($class);
+        $fqClassNameArr = explode('\\', $fqClassName);
+        return array_pop($fqClassNameArr);
+    }
 }
