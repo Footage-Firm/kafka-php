@@ -15,7 +15,7 @@ class Failure extends BaseRecord
 
     private $failedTopic;
 
-    private $details;
+    private $details = '';
 
     public function getMeta(): SharedMeta
     {
@@ -65,15 +65,15 @@ class Failure extends BaseRecord
     {
         return <<<SCHEMA
 {
-    type: "record",
-    name: "Failure",
-    namespace: "poc",
-    fields: [
-      { name: "payload", type: "string" },
-      { name: "failedTopic", type: "string"},
-      { name: "details", type: "string", default: ""}
+    "type": "record",
+    "name": "Failure",
+    "namespace": "poc",
+    "fields": [
+      { "name": "payload", "type": "string" },
+      { "name": "failedTopic", "type": "string"},
+      { "name": "details", "type": "string", "default": ""}
     ]
-  };
+  }
 SCHEMA;
     }
 
