@@ -3,25 +3,15 @@
 namespace Tests\Fakes;
 
 use App\Events\BaseRecord;
-use App\Events\Poc\Common\SharedMeta;
 
 class FakeRecord extends BaseRecord
 {
-
-    /** @var SharedMeta */
-    private $meta;
 
     private $id;
 
     private $name;
 
     private $version = 1;
-
-    public function setMeta(SharedMeta $meta): FakeRecord
-    {
-        $this->meta = $meta;
-        return $this;
-    }
 
     public function setId($id): FakeRecord
     {

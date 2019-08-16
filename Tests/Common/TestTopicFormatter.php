@@ -4,9 +4,9 @@ namespace Tests\Common;
 
 use App\Common\TopicFormatter;
 use Tests\Fakes\FakeRecord;
-use Tests\TestCaseWithFaker;
+use Tests\WithFaker;
 
-class TestTopicFormatter extends TestCaseWithFaker
+class TestTopicFormatter extends WithFaker
 {
 
     public function testTopicFromRecord()

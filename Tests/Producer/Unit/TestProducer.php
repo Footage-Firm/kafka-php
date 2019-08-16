@@ -5,17 +5,20 @@ namespace Tests\Producer\Unit;
 use App\Producer\Producer;
 use App\Producer\Producer as ProducerAlias;
 use App\Serializers\KafkaSerializerInterface;
-use Exception;
+use Error;
 use Mockery;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
 use Tests\Fakes\FakeRecord;
 use Tests\Fakes\FakeRecordFactory;
-use Tests\TestCaseWithFaker;
+use Tests\WithFaker;
 
-class TestProducer extends TestCaseWithFaker
+class TestProducer extends TestCase
 {
+
+    use WithFaker;
 
     /** @var \Mockery\Mock|\RdKafka\Producer */
     private $mockKafkaProducer;
@@ -37,6 +40,7 @@ class TestProducer extends TestCaseWithFaker
     public function setUp(): void
     {
         parent::setUp();
+        $this->initFaker();
 
         $this->topic = $this->faker->word;
         $this->fakeEncodedRecord = $this->faker->word;
@@ -102,7 +106,7 @@ class TestProducer extends TestCaseWithFaker
 
     public function testExceptionThrownAndFailureProducedWhenInitialProductionFails()
     {
-        $this->expectException(Exception::class);
+        $this->expectException(Error::class);
 
         $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);
         $this->mockLogger->shouldReceive('error');
@@ -111,7 +115,7 @@ class TestProducer extends TestCaseWithFaker
         $this->mockTopicProducer->shouldReceive('produce')
           ->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord])
           ->times(1)
-          ->andThrow(Exception::class);
+          ->andThrow(Error::class);
 
         // Don't throw an error when producing the failure record
         $mockTopicProducer_FailureRecord = Mockery::mock(ProducerTopic::class)->shouldIgnoreMissing();

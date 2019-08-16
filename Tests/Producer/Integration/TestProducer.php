@@ -2,16 +2,24 @@
 
 namespace Test\Producer\Integration;
 
-use App\Producer\Producer;
 use App\Producer\ProducerBuilder;
 use AvroSchemaParseException;
+use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\Fakes\FakeRecord;
 use Tests\Fakes\FakeRecordFactory;
-use Tests\TestCaseWithFaker;
+use Tests\WithFaker;
 
-class TestProducer extends TestCaseWithFaker
+class TestProducer extends TestCase
 {
+
+    use WithFaker;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->initFaker();
+    }
 
     private $schemaRegistryUrl = "http://0.0.0.0:8081";
 
@@ -21,7 +29,6 @@ class TestProducer extends TestCaseWithFaker
     {
         $this->expectException(AvroSchemaParseException::class);
         $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl);
-        /** @var Producer $producer */
         $producer = $builder->build();
         $record = new FakeRecord();
         $record->setId('test');
@@ -33,7 +40,6 @@ class TestProducer extends TestCaseWithFaker
         $this->expectException(RuntimeException::class);
         $builder = new ProducerBuilder($this->brokers, 'http://not.gonna.work');
 
-        /** @var Producer $producer */
         $producer = $builder->build();
         $producer->produce(FakeRecordFactory::fakeRecord());
     }
