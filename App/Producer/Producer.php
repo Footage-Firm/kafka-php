@@ -37,7 +37,7 @@ class Producer
     public function produce(BaseRecord $record, string $topic = null, bool $produceFailureRecords = true): void
     {
         $topic = $topic ?? TopicFormatter::topicFromRecord($record);
-
+        
         $topicProducer = $this->kafkaClient->newTopic($topic);
 
         try {
@@ -47,7 +47,6 @@ class Producer
              * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
              */
             $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
-            //        $this->kafkaClient->poll(2000);
         } catch (Throwable $t) {
             if ($produceFailureRecords) {
                 $this->produceFailureRecord($record, $topic, $t->getMessage());
@@ -57,7 +56,7 @@ class Producer
         }
 
         while ($this->kafkaClient->getOutQLen() > 0) {
-            $this->kafkaClient->poll(50);
+            $this->kafkaClient->poll(100);
         }
     }
 
