@@ -3,10 +3,8 @@
 namespace App\Consumer;
 
 use App\Events\BaseRecord;
-use App\Serializers\KafkaSerializerInterface;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
 use Monolog\Logger;
-use Psr\Log\LoggerInterface;
 use RdKafka\Exception as KafkaException;
 use RdKafka\KafkaConsumer;
 use RdKafka\KafkaConsumerTopic;
@@ -31,20 +29,16 @@ class Consumer
 
     private $logger;
 
-    public function __construct(
-      KafkaConsumer $kafkaConsumer,
-      KafkaSerializerInterface $serializer,
-      LoggerInterface $logger
-    ) {
-        $this->kafkaConsumer = $kafkaConsumer;
-        $this->serializer = $serializer;
-        $this->logger = $logger;
-
+    public function __construct(ConsumerConfig $config)
+    {
+        $this->config = $config;
+        $this->serializer = $config->getSerializer();
+        $this->logger = $config->getLogger();
+        $this->kafkaConsumer = new KafkaConsumer($this->config);
     }
 
     public function consume(array $topics, BaseRecord $record): void
     {
-        // todo - this needs to be changed to low level
         try {
             $this->kafkaConsumer->subscribe($topics);
         } catch (Throwable $e) {
@@ -128,7 +122,7 @@ class Consumer
 
     private function handleTimeOut(): string
     {
-        return 'Time out';
+        Return 'Time out';
     }
 
     private function handleError(Message $message, BaseRecord $record)

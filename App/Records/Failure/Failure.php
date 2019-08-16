@@ -13,7 +13,7 @@ class Failure extends BaseRecord
 
     private $payload;
 
-    private $failedTopic;
+    private $topic;
 
     private $details = '';
 
@@ -39,14 +39,14 @@ class Failure extends BaseRecord
         return $this;
     }
 
-    public function getFailedTopic(): string
+    public function getTopic(): string
     {
-        return $this->failedTopic;
+        return $this->topic;
     }
 
-    public function setFailedTopic(string $failedTopic): Failure
+    public function setTopic(string $topic): Failure
     {
-        $this->failedTopic = $failedTopic;
+        $this->topic = $topic;
         return $this;
     }
 
@@ -70,7 +70,7 @@ class Failure extends BaseRecord
     "namespace": "poc",
     "fields": [
       { "name": "payload", "type": "string" },
-      { "name": "failedTopic", "type": "string"},
+      { "name": "topic", "type": "string"},
       { "name": "details", "type": "string", "default": ""}
     ]
   }
@@ -81,7 +81,7 @@ SCHEMA;
     {
         return [
           'payload' => $this->encode($this->payload),
-          'failedTopic' => $this->encode($this->failedTopic),
+          'topic' => $this->encode($this->topic),
           'details' => $this->encode($this->details),
         ];
     }

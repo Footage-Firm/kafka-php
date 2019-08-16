@@ -2,7 +2,6 @@
 
 namespace App\Serializers\Traits;
 
-// I think this will be reused in a few places, but right now its only used in the serializer.
 trait SnakeCaseFormatterTrait
 {
 

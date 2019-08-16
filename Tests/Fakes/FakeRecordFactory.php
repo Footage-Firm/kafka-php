@@ -16,12 +16,4 @@ class FakeRecordFactory
         $fake->setName($name);
         return $fake;
     }
-
-    public static function fakeRecordTwo(int $id = null): FakeRecordTwo
-    {
-        $id = $id ?? Factory::create()->numberBetween(0, 9999);
-        $fake = new FakeRecordTwo();
-        $fake->setId($id);
-        return $fake;
-    }
 }

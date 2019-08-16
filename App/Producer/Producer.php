@@ -37,7 +37,7 @@ class Producer
     public function produce(BaseRecord $record, string $topic = null, bool $produceFailureRecords = true): void
     {
         $topic = $topic ?? TopicFormatter::topicFromRecord($record);
-        
+
         $topicProducer = $this->kafkaClient->newTopic($topic);
 
         try {
@@ -64,7 +64,7 @@ class Producer
     {
         $failure = new Failure();
         $failure->setPayload(json_encode($record));
-        $failure->setFailedTopic($topic);
+        $failure->setTopic($topic);
         $failure->setDetails($errorMsg);
 
         $this->produce($failure, TopicFormatter::producerFailureTopicFromRecord($record), false);

@@ -2,7 +2,7 @@
 
 
 use App\Consumer\Consumer;
-use App\Consumer\ConsumerBuildeer;
+use App\Consumer\ConsumerConfig;
 use App\Events\Poc\User\V2\UserEvent;
 use App\Serializers\AvroSerializer;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
@@ -14,13 +14,19 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 
 function consume()
 {
-    $schemaRegistryUri = 'https://brendan-brendan-1b9f.aivencloud.com:28101';
+    //    $schemaRegistryUri = 'schema-registry:8081';
+    $schemaRegistryUri = 'https://kafka-development-storyblocks-16cb.aivencloud.com:18367';
     $schemaRegistryUser = 'avnadmin';
-    $schemaRegistryPassword = 'szmvarz7wu1y3izy';
-    $brokers = 'brendan-brendan-1b9f.aivencloud.com:28098';
-    $caLocation = 'ca.pem';
-    $certLocation = 'service.cert';
-    $keyLocation = 'service.key';
+    $schemaRegistryPassword = 'zlb2vwhmnp6opkvq';
+    //    $brokers = 'broker';
+    $brokers = 'kafka-development-storyblocks-16cb.aivencloud.com:18364';
+    //    $topic = 'user-event';
+    //    $caLocation = '/opt/project/ca.pem';
+    $caLocation = '/../../ca.pem';
+    //    $certLocation = '/opt/project/service.cert';
+    $certLocation = '/../../service.cert';
+    //    $keyLocation = '/opt/project/service.key';
+    $keyLocation = '/../../service.key';
     $client = new Client(['base_uri' => $schemaRegistryUri, 'auth' => [$schemaRegistryUser, $schemaRegistryPassword]]);
     $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     $serializer = new AvroSerializer($registry);//, true, true);
@@ -46,7 +52,7 @@ function consume()
                 throw new \Exception($err);
         }
     });
-    $topics = ['php'];
+    $topics = ['bbatest'];
 
     echo 'Consuming topics: ' . implode(',', $topics) . PHP_EOL;
 
