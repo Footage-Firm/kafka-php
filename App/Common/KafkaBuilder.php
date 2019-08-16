@@ -16,17 +16,19 @@ use RdKafka\TopicConf;
 abstract class KafkaBuilder
 {
 
-    /** @var \RdKafka\Conf */
+    /** @var Conf */
     protected $config;
 
-    /** @var \RdKafka\TopicConf */
+    /** @var TopicConf */
     protected $topicConfig;
 
-    /** @var \App\Serializers\KafkaSerializerInterface */
+    /** @var KafkaSerializerInterface */
     protected $serializer;
 
-    /** @var \Psr\Log\LoggerInterface */
+    /** @var LoggerInterface */
     protected $logger;
+
+    protected $shouldProduceFailureRecords = true;
 
     abstract protected function defaultTopicConfig(): TopicConf;
 
@@ -47,9 +49,9 @@ abstract class KafkaBuilder
     public function setSslData(string $caPath, string $certPath, string $keyPath): void
     {
         $this->config->set('security.protocol', 'ssl');
-        $this->config->set('ssl.ca.Path', $caPath);
-        $this->config->set('ssl.certificate.Path', $certPath);
-        $this->config->set('ssl.key.Path', $keyPath);
+        $this->config->set('ssl.ca.location', $caPath);
+        $this->config->set('ssl.certificate.location', $certPath);
+        $this->config->set('ssl.key.location', $keyPath);
     }
 
     public function setKafkaErrorCallback(callable $callback): self
@@ -70,14 +72,25 @@ abstract class KafkaBuilder
         return $this;
     }
 
+    public function shouldProduceFailureRecords(bool $shouldProduceFailureRecords): self
+    {
+        $this->shouldProduceFailureRecords = $shouldProduceFailureRecords;
+        return $this;
+    }
+
     private function createSerializer(string $schemaRegistryUrl): KafkaSerializerInterface
     {
-        $client = new Client([
-          'base_uri' => $schemaRegistryUrl,
-            //todo -- parse the url for auth
-            //          'auth' => [$schemaRegistryUser, $schemaRegistryPassword],
-        ]);
+        $config = ['base_uri' => $schemaRegistryUrl];
+
+        $user = parse_url($schemaRegistryUrl, PHP_URL_USER);
+        $pass = parse_url($schemaRegistryUrl, PHP_URL_PASS);
+
+        if ($user || $pass) {
+            $config['auth'] = [$user, $pass];
+        }
+        $client = new Client($config);
         $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
+
         // todo -- disable new schema creation
         return new AvroSerializer($registry, true, true);
     }
