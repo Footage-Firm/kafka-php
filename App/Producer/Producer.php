@@ -2,79 +2,71 @@
 
 namespace App\Producer;
 
+use App\Common\KafkaListener;
+use App\Common\TopicFormatter;
 use App\Events\BaseRecord;
-use RdKafka\Metadata;
+use App\Records\Failure\Failure;
+use App\Serializers\KafkaSerializerInterface;
+use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
-use RdKafka\Topic;
+use Throwable;
 
 
 class Producer
 {
 
-    private $config;
+    /** @var KafkaProducer */
+    private $kafkaClient;
 
+    /** @var KafkaSerializerInterface */
     private $serializer;
 
-    private $kafkaProducer;
+    /** @var \Psr\Log\LoggerInterface */
+    private $logger;
 
-    public function __construct(ProducerConfig $config)
-    {
-        $this->config = $config;
-        $this->serializer = $config->getSerializer();
-        $this->kafkaProducer = $this->createKafkaProducer();
+    public function __construct(
+      KafkaProducer $kafkaClient,
+      KafkaSerializerInterface $serializer,
+      LoggerInterface $logger
+    ) {
+        $this->serializer = $serializer;
+        $this->kafkaClient = $kafkaClient;
+        $this->logger = $logger;
     }
 
-    public function produce(string $topic, BaseRecord $record): void
+    public function produce(BaseRecord $record, string $topic = null, bool $produceFailureRecords = true): void
     {
-        $topicProducer = $this->kafkaProducer->newTopic($topic);
-        $encodedRecord = $this->encodeRecord($record);
-        $topicProducer->produce(
-          $this->config->getPartition(),
-          $this->config->getMessageFlag(),
-          $encodedRecord,
-          $record->getKey()
-        );
-        $this->kafkaProducer->poll(0);
-    }
+        $topic = $topic ?? TopicFormatter::topicFromRecord($record);
 
-    public function produceMany(string $topic, array $records)
-    {
-        $topicProducer = $this->kafkaProducer->newTopic($topic);
-        foreach ($records as $record) {
-            $encodedRecord = $this->encodeRecord($record);
-            $topicProducer->produce(
-              $this->config->getPartition(),
-              $this->config->getMessageFlag(),
-              $encodedRecord,
-              $record->getKey()
-            );
-            $this->kafkaProducer->poll(0);
+        $topicProducer = $this->kafkaClient->newTopic($topic);
+
+        try {
+            $encodedRecord = $this->serializer->serialize($record);
+            /*
+             * RD_KAFKA_PARTITION_UA means kafka will automatically decide to which partition the record will be produced.
+             * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
+             */
+            $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
+        } catch (Throwable $t) {
+            if ($produceFailureRecords) {
+                $this->produceFailureRecord($record, $topic, $t->getMessage());
+            }
+            $this->logger->error($t->getMessage());
+            throw $t;
         }
 
-        while ($this->kafkaProducer->getOutQLen() > 0) {
-            $this->kafkaProducer->poll(50);
+        while ($this->kafkaClient->getOutQLen() > 0) {
+            $this->kafkaClient->poll(100);
         }
     }
 
-    public function getMetaData(bool $allTopics, ?Topic $onlyTopic, int $timeoutMs): Metadata
+    private function produceFailureRecord(BaseRecord $record, string $topic, string $errorMsg): void
     {
-        return $this->kafkaProducer->getMetadata($allTopics, $onlyTopic, $timeoutMs);
-    }
+        $failure = new Failure();
+        $failure->setPayload(json_encode($record));
+        $failure->setTopic($topic);
+        $failure->setDetails($errorMsg);
 
-    private function createKafkaProducer(): KafkaProducer
-    {
-        $producer = new KafkaProducer($this->config);
-
-        $logLevel = $this->config->getLogLevel();
-        if ($logLevel) {
-            $producer->setLogLevel(LOG_DEBUG);
-        }
-
-        return $producer;
-    }
-
-    private function encodeRecord(BaseRecord $record): string
-    {
-        return $this->serializer->serialize($record);
+        $this->produce($failure, TopicFormatter::producerFailureTopic($topic), false);
     }
 }
