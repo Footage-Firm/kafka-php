@@ -3,6 +3,8 @@
 namespace App\Consumer;
 
 use App\Common\KafkaBuilder;
+use App\Serializers\KafkaSerializerInterface;
+use FlixTech\SchemaRegistryApi\Registry;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\KafkaConsumer;
@@ -31,16 +33,16 @@ class ConsumerBuilder extends KafkaBuilder
       string $schemaRegistryUrl,
       LoggerInterface $logger = null,
       Conf $config = null,
-      TopicConf $topicConf = null
+      TopicConf $topicConf = null,
+      Registry $registry = null,
+      KafkaSerializerInterface $serializer = null
+
     ) {
-        parent::__construct($brokers, $schemaRegistryUrl, $logger, $config);
+        parent::__construct($brokers, $schemaRegistryUrl, $logger, $config, $topicConf, $registry, $serializer);
         $this->groupId = $groupId;
         $this->topicConfig = $topicConf ?? $this->createDefaultTopicConfig();
         $this->setGroupId($groupId);
         $this->disableAutoCommit();
-
-        //        $this->config->set('debug', 'all');
-
     }
 
     public function build(): Consumer

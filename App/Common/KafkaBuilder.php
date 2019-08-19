@@ -4,6 +4,7 @@ namespace App\Common;
 
 use App\Serializers\AvroSerializer;
 use App\Serializers\KafkaSerializerInterface;
+use FlixTech\SchemaRegistryApi\Registry;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
@@ -30,6 +31,9 @@ abstract class KafkaBuilder
 
     protected $shouldProduceFailureRecords = true;
 
+    /** @var Registry */
+    protected $registry;
+
     abstract protected function defaultTopicConfig(): TopicConf;
 
     public function __construct(
@@ -37,9 +41,12 @@ abstract class KafkaBuilder
       string $schemaRegistryUrl,
       LoggerInterface $logger = null,
       Conf $config = null,
-      TopicConf $topicConfig = null
+      TopicConf $topicConfig = null,
+      Registry $registry = null,
+      KafkaSerializerInterface $serializer = null
     ) {
-        $this->serializer = $this->createSerializer($schemaRegistryUrl);
+        $this->registry = $registry ?? $this->createRegistry($schemaRegistryUrl);
+        $this->serializer = $serializer ?? new AvroSerializer($this->registry, true, true);
         $this->logger = $logger ?? new Logger('kafka');
         $this->config = $config ?? new Conf();
         $this->topicConfig = $topicConfig ?? $this->defaultTopicConfig();
@@ -78,7 +85,7 @@ abstract class KafkaBuilder
         return $this;
     }
 
-    private function createSerializer(string $schemaRegistryUrl): KafkaSerializerInterface
+    private function createRegistry(string $schemaRegistryUrl): Registry
     {
         $config = ['base_uri' => $schemaRegistryUrl];
 
@@ -89,10 +96,6 @@ abstract class KafkaBuilder
             $config['auth'] = [$user, $pass];
         }
         $client = new Client($config);
-        $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
-
-        // todo -- disable new schema creation
-        return new AvroSerializer($registry, true, true);
+        return new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     }
-
 }
