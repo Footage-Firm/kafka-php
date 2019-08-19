@@ -3,7 +3,7 @@
 namespace App\Serializers;
 
 use App\Events\BaseRecord;
-use App\Serializers\Traits\SnakeCaseFormatterTrait;
+use App\Traits\RecordFormatting;
 use AvroSchema;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
 use FlixTech\AvroSerializer\Objects\RecordSerializer;
@@ -12,7 +12,7 @@ use FlixTech\SchemaRegistryApi\Registry;
 class AvroSerializer implements KafkaSerializerInterface
 {
 
-    use SnakeCaseFormatterTrait;
+    use RecordFormatting;
 
     private $serializer;
 
