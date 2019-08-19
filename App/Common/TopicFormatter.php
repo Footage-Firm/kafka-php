@@ -36,10 +36,5 @@ class TopicFormatter
         return strtolower(implode('-', $split));
     }
 
-    private static function className($class): string
-    {
-        $fqClassName = get_class($class);
-        $fqClassNameArr = explode('\\', $fqClassName);
-        return array_pop($fqClassNameArr);
-    }
+
 }
