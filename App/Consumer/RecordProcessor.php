@@ -3,11 +3,13 @@
 namespace App\Consumer;
 
 use App\Events\BaseRecord;
+use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatting;
 use AvroSchema;
 use FlixTech\SchemaRegistryApi\Registry;
 use GuzzleHttp\Promise\PromiseInterface;
 use RdKafka\Message;
+use Throwable;
 use function FlixTech\AvroSerializer\Protocol\decode;
 use function Widmogrod\Functional\valueOf;
 
@@ -21,14 +23,19 @@ class RecordProcessor
 
     private $registry;
 
+    private $serializer;
 
-    public function __construct(Registry $registry)
+    public function __construct(Registry $registry, KafkaSerializerInterface $serializer)
     {
         $this->registry = $registry;
+        $this->serializer = $serializer;
     }
 
-    public function subscribe(BaseRecord $record, callable $success, ?callable $failure): void
-    {
+    public function subscribe(
+      BaseRecord $record,
+      callable $success,
+      callable $failure = null
+    ): void {
         $this->handlers[$this->className($record)] = new MessageHandler(
           $record,
           $success,
@@ -40,9 +47,20 @@ class RecordProcessor
     public function process(Message $message)
     {
         $handler = $this->getHandlerForMessage($message);
+
         if ($handler) {
-            return $handler->success();
+            try {
+                $decoded = $this->serializer->deserialize($message->payload, $handler->getRecord());
+                return $handler->success($decoded);
+            } catch (Throwable $t) {
+
+            }
         }
+    }
+
+    protected function retry($handler)
+    {
+
     }
 
     private function schemaIdFromRecord(BaseRecord $record): int
@@ -77,15 +95,12 @@ class RecordProcessor
         return null;
     }
 
-    public function getHandlers(): array
-    {
-        return $this->handlers;
-    }
-
     private function getHandlerForMessage(Message $message)
     {
         $schemaId = $this->getSchemaIdFromMessage($message);
-        return $this->getHandlerBySchemaId($schemaId);
+        if ($schemaId) {
+            return $this->getHandlerBySchemaId($schemaId);
+        }
     }
 
     private function getSchemaIdFromMessage(Message $message)
@@ -94,8 +109,13 @@ class RecordProcessor
         if (is_array($decoded) && array_key_exists('schemaId', $decoded)) {
             return $decoded['schemaId'];
         }
-        // todo -- handle exception here
-        throw new \RuntimeException();
+
     }
+
+    public function getHandlers(): array
+    {
+        return $this->handlers;
+    }
+
 
 }

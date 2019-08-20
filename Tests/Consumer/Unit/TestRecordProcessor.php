@@ -4,6 +4,7 @@ namespace Test\Consumer\Unit;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
 use App\Consumer\RecordProcessor;
+use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatting;
 use AvroSchema;
 use FlixTech\SchemaRegistryApi\Registry;
@@ -23,11 +24,14 @@ class TestRecordProcessor extends TestCase
 
     private $mockRegistry;
 
+    private $mockSerializer;
+
     public function setUp(): void
     {
         parent::setUp();
         $this->initFaker();
         $this->mockRegistry = Mockery::mock(Registry::class);
+        $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class);
     }
 
     public function testSubscribeAddsHandler()
@@ -42,7 +46,7 @@ class TestRecordProcessor extends TestCase
           ->with('fake-record-value', Mockery::type(AvroSchema::class))
           ->andReturn($schemaId);
 
-        $recordProcessor = new RecordProcessor($this->mockRegistry);
+        $recordProcessor = new RecordProcessor($this->mockRegistry, $this->mockSerializer);
         $recordProcessor->subscribe($fakeRecord, $mockSuccess, $mockFailure);
 
         $handlers = $recordProcessor->getHandlers();
@@ -76,13 +80,15 @@ class TestRecordProcessor extends TestCase
           ->with('fake-record-two-value', Mockery::type(AvroSchema::class))
           ->andReturn($schemaIdTwo);
 
-        $recordProcessor = new RecordProcessor($this->mockRegistry);
+        $recordProcessor = new RecordProcessor($this->mockRegistry, $this->mockSerializer);
 
         $recordProcessor->subscribe($fakeRecord, $mockSuccess, $mockFailure);
         $recordProcessor->subscribe($fakeRecordTwo, $mockSuccessTwo, $mockFailureTwo);
 
         $mockMessage = Mockery::mock(Message::class);
         $mockMessage->payload = valueOf(encode(1, $schemaId, json_encode($fakeRecord)));
+
+        $this->mockSerializer->shouldReceive('deserialize')->andReturn($fakeRecord);
         $recordProcessor->process($mockMessage);
 
         $mockSuccess->shouldBeCalled()->once();
@@ -105,7 +111,7 @@ class TestRecordProcessor extends TestCase
           ->with('fake-record-two-value', Mockery::type(AvroSchema::class))
           ->andReturn($schemaId);
 
-        $recordProcessor = new RecordProcessor($this->mockRegistry);
+        $recordProcessor = new RecordProcessor($this->mockRegistry, $this->mockSerializer);
 
         $recordProcessor->subscribe($fakeRecordTwo, $mockSuccess, $mockFailure);
 

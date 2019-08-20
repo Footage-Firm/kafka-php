@@ -27,14 +27,14 @@ class MessageHandler
         $this->schemaId = $schemaId;
     }
 
-    public function success()
+    public function success(BaseRecord $record)
     {
-        return ($this->handler)($this->record);
+        return ($this->handler)($record);
     }
 
-    public function fail()
+    public function fail(BaseRecord $record)
     {
-        return ($this->failure)($this->record);
+        return ($this->failure)($record);
     }
 
     public function getRecord(): BaseRecord
