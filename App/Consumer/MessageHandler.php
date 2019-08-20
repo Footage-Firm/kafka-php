@@ -34,7 +34,9 @@ class MessageHandler
 
     public function fail(BaseRecord $record)
     {
-        return ($this->failure)($record);
+        if ($this->failure) {
+            ($this->failure)($record);
+        }
     }
 
     public function getRecord(): BaseRecord
@@ -46,4 +48,5 @@ class MessageHandler
     {
         return $this->schemaId;
     }
+
 }

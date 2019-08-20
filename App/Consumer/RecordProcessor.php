@@ -2,7 +2,9 @@
 
 namespace App\Consumer;
 
+use App\Common\TopicFormatter;
 use App\Events\BaseRecord;
+use App\Producer\Producer;
 use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatting;
 use AvroSchema;
@@ -18,6 +20,8 @@ class RecordProcessor
 
     use RecordFormatting;
 
+    public const DEFAULT_RETRIES = 3;
+
     /** @var MessageHandler[] */
     private $handlers = [];
 
@@ -25,10 +29,24 @@ class RecordProcessor
 
     private $serializer;
 
-    public function __construct(Registry $registry, KafkaSerializerInterface $serializer)
-    {
+    private $numRetries = self::DEFAULT_RETRIES;
+
+    private $shouldSendToFailureTopic = true;
+
+    private $groupId;
+
+    private $failureProducer;
+
+    public function __construct(
+      Registry $registry,
+      KafkaSerializerInterface $serializer,
+      string $groupId,
+      Producer $failureProducer
+    ) {
         $this->registry = $registry;
         $this->serializer = $serializer;
+        $this->groupdId = $groupId;
+        $this->failureProducer = $failureProducer;
     }
 
     public function subscribe(
@@ -49,18 +67,34 @@ class RecordProcessor
         $handler = $this->getHandlerForMessage($message);
 
         if ($handler) {
+            $record = $this->serializer->deserialize($message->payload, $handler->getRecord());
             try {
-                $decoded = $this->serializer->deserialize($message->payload, $handler->getRecord());
-                return $handler->success($decoded);
+                return $handler->success($record);
             } catch (Throwable $t) {
-
+                return $this->retry($record);
             }
         }
     }
 
-    protected function retry($handler)
+    private function retry(BaseRecord $record, MessageHandler $handler, int $currentTry = 0)
     {
+        if ($currentTry >= $this->numRetries) {
+            $this->handleFailure($handler, $record);
+        } else {
+            try {
+                return $handler->success($record);
+            } catch (Throwable $t) {
+                $this->retry($record, $handler, $currentTry + 1);
+            }
+        }
+    }
 
+    private function handleFailure(MessageHandler $handler, BaseRecord $record)
+    {
+        $handler->fail($record);
+        if ($this->shouldSendToFailureTopic) {
+            $this->sendToFailureTopic($record);
+        }
     }
 
     private function schemaIdFromRecord(BaseRecord $record): int
@@ -87,29 +121,36 @@ class RecordProcessor
 
     private function getHandlerBySchemaId(int $schemaId): ?MessageHandler
     {
+        $handler = null;
         foreach ($this->handlers as $i => $handler) {
             if ($handler->getSchemaId() === $schemaId) {
-                return $this->handlers[$i];
+                $handler = $this->handlers[$i];
+                break;
             }
         }
-        return null;
+
+        return $handler;
     }
 
-    private function getHandlerForMessage(Message $message)
+    private function getHandlerForMessage(Message $message): ?MessageHandler
     {
         $schemaId = $this->getSchemaIdFromMessage($message);
-        if ($schemaId) {
-            return $this->getHandlerBySchemaId($schemaId);
-        }
+        return $schemaId ? $this->getHandlerBySchemaId($schemaId) : null;
     }
 
     private function getSchemaIdFromMessage(Message $message)
     {
         $decoded = valueOf(decode($message->payload));
-        if (is_array($decoded) && array_key_exists('schemaId', $decoded)) {
-            return $decoded['schemaId'];
-        }
+        return is_array($decoded) && array_key_exists('schemaId', $decoded)
+          ? $decoded['schemaId']
+          : null;
 
+    }
+
+    private function sendToFailureTopic(BaseRecord $record): void
+    {
+        $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
+        $this->failureProducer->produce($record, $topic);
     }
 
     public function getHandlers(): array
