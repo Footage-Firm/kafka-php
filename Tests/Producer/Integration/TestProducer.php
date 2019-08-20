@@ -6,8 +6,8 @@ use App\Producer\ProducerBuilder;
 use AvroSchemaParseException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Tests\Fakes\FakeFactory;
 use Tests\Fakes\FakeRecord;
-use Tests\Fakes\FakeRecordFactory;
 use Tests\WithFaker;
 
 class TestProducer extends TestCase
@@ -41,6 +41,6 @@ class TestProducer extends TestCase
         $builder = new ProducerBuilder($this->brokers, 'http://not.gonna.work');
 
         $producer = $builder->build();
-        $producer->produce(FakeRecordFactory::fakeRecord());
+        $producer->produce(FakeFactory::fakeRecord());
     }
 }
