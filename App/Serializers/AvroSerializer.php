@@ -32,7 +32,7 @@ class AvroSerializer implements KafkaSerializerInterface
     {
         $schema = AvroSchema::parse($record->schema());
         $data = $record->data();
-        $name = str_replace('_', '-', $this->convertToSnakeCase($record->name()));
+        $name = str_replace('_', '-', $this->kebabCase($record->name()));
 
         return $this->serializer->encodeRecord($name . '-value', $schema, $data);
     }

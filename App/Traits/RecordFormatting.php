@@ -5,6 +5,8 @@ namespace App\Traits;
 trait RecordFormatting
 {
 
+    public static $SUBJECT_SUFFIX = '-value';
+
     protected function className($class): string
     {
         $fqClassName = get_class($class);
@@ -12,15 +14,20 @@ trait RecordFormatting
         return array_pop($fqClassNameArr);
     }
 
-    protected function convertToSnakeCase($value, $delimiter = '_')
+    protected function kebabCase(string $value): string
     {
         if (!ctype_lower($value)) {
             $value = preg_replace('/\s+/u', '', ucwords($value));
 
-            $value = preg_replace('/(.)(?=[A-Z])/u', '$1' . $delimiter, $value);
+            $value = preg_replace('/(.)(?=[A-Z])/u', '$1' . '-', $value);
             return mb_strtolower($value, 'UTF-8');
         }
 
         return $value;
+    }
+
+    protected function formatAsSubject(string $value): string
+    {
+        return $this->kebabCase($value) . static::$SUBJECT_SUFFIX;
     }
 }

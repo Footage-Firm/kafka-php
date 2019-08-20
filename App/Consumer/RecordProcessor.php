@@ -3,7 +3,6 @@
 namespace App\Consumer;
 
 use App\Events\BaseRecord;
-use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatting;
 use AvroSchema;
 use FlixTech\SchemaRegistryApi\Registry;
@@ -22,12 +21,10 @@ class RecordProcessor
 
     private $registry;
 
-    private $serializer;
 
-    public function __construct(Registry $registry, KafkaSerializerInterface $serializer)
+    public function __construct(Registry $registry)
     {
         $this->registry = $registry;
-        $this->serializer = $serializer;
     }
 
     public function subscribe(BaseRecord $record, callable $success, ?callable $failure): void
@@ -35,7 +32,7 @@ class RecordProcessor
         $this->handlers[$this->className($record)] = new MessageHandler(
           $record,
           $success,
-          $this->getSchemaId($record),
+          $this->schemaIdFromRecord($record),
           $failure
         );
     }
@@ -43,15 +40,14 @@ class RecordProcessor
     public function process(Message $message)
     {
         $handler = $this->getHandlerForMessage($message);
-        $record = $this->serializer->deserialize($message->payload, $handler->getRecord());
-        $handler->success();
-        // get correct handler, try to process, retry if errors
+        if ($handler) {
+            return $handler->success();
+        }
     }
 
-    private function getSchemaId(BaseRecord $record): int
+    private function schemaIdFromRecord(BaseRecord $record): int
     {
-        // this is
-        $subject = $this->convertToSnakeCase($record->name(), '-') . '-value';
+        $subject = $this->formatAsSubject($record->name());
         $schema = AvroSchema::parse($record->schema());
         $response = $this->registry->schemaId($subject, $schema);
         return $this->extractValueFromRegistryResponse($response);
@@ -78,7 +74,7 @@ class RecordProcessor
                 return $this->handlers[$i];
             }
         }
-        // todo -- handle this case
+        return null;
     }
 
     public function getHandlers(): array
