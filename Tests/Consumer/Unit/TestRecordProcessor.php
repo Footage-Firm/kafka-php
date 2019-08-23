@@ -4,6 +4,7 @@ namespace Test\Consumer\Unit;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
 use App\Consumer\RecordProcessor;
+use App\Producer\Producer;
 use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatting;
 use AvroSchema;
@@ -24,45 +25,65 @@ class TestRecordProcessor extends TestCase
 
     private $mockRegistry;
 
+    /** @var \Mockery\Mock|KafkaSerializerInterface */
     private $mockSerializer;
+
+    private $mockFailureProducer;
+
+    private $groupId;
+
+    private $recordProcessor;
+
+    private $mockSuccessFn;
+
+    private $mockFailureFn;
+
+    private $fakeRecord;
+
+    private $mockMessage;
 
     public function setUp(): void
     {
         parent::setUp();
         $this->initFaker();
         $this->mockRegistry = Mockery::mock(Registry::class);
-        $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class);
+        $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class)->shouldIgnoreMissing();
+        $this->mockFailureProducer = Mockery::mock(Producer::class);
+        $this->groupId = $this->faker->word;
+        $this->mockSuccessFn = new MockeryCallableMock();
+        $this->mockFailureFn = new MockeryCallableMock();
+        $this->fakeRecord = FakeFactory::fakeRecord();
+        $this->mockMessage = Mockery::mock(Message::class);
+        $this->recordProcessor = new RecordProcessor(
+          $this->mockRegistry,
+          $this->mockSerializer,
+          $this->groupId,
+          $this->mockFailureProducer
+        );
     }
 
     public function testSubscribeAddsHandler()
     {
         $schemaId = $this->faker->randomDigitNotNull;
-        $mockSuccess = new MockeryCallableMock();
-        $mockFailure = new MockeryCallableMock();
-        $fakeRecord = FakeFactory::fakeRecord();
 
         $this->mockRegistry
           ->shouldReceive('schemaId')
           ->with('fake-record-value', Mockery::type(AvroSchema::class))
           ->andReturn($schemaId);
 
-        $recordProcessor = new RecordProcessor($this->mockRegistry, $this->mockSerializer);
-        $recordProcessor->subscribe($fakeRecord, $mockSuccess, $mockFailure);
+        $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
 
-        $handlers = $recordProcessor->getHandlers();
+        $handlers = $this->recordProcessor->getHandlers();
         self::assertCount(1, $handlers);
 
         $handler = array_pop($handlers);
-        self::assertSame($fakeRecord, $handler->getRecord());
+        self::assertSame($this->fakeRecord, $handler->getRecord());
     }
 
     public function testProcessCallsCorrectSuccessFunction()
     {
         $this->expectNotToPerformAssertions();
 
-        $fakeRecord = FakeFactory::fakeRecord();
-        $mockSuccess = new MockeryCallableMock();
-        $mockFailure = new MockeryCallableMock();
         $schemaId = $this->faker->randomDigitNotNull;
 
         $this->mockRegistry
@@ -71,8 +92,8 @@ class TestRecordProcessor extends TestCase
           ->andReturn($schemaId);
 
         $fakeRecordTwo = FakeFactory::fakeRecordTwo();
-        $mockSuccessTwo = new MockeryCallableMock();
-        $mockFailureTwo = new MockeryCallableMock();
+        $mockSuccessFnTwo = new MockeryCallableMock();
+        $mockFailureFnTwo = new MockeryCallableMock();
         $schemaIdTwo = $this->faker->randomDigitNotNull;
 
         $this->mockRegistry
@@ -80,50 +101,51 @@ class TestRecordProcessor extends TestCase
           ->with('fake-record-two-value', Mockery::type(AvroSchema::class))
           ->andReturn($schemaIdTwo);
 
-        $recordProcessor = new RecordProcessor($this->mockRegistry, $this->mockSerializer);
+        $this->mockMessage->payload = valueOf(encode(1, $schemaId, json_encode($this->fakeRecord)));
 
-        $recordProcessor->subscribe($fakeRecord, $mockSuccess, $mockFailure);
-        $recordProcessor->subscribe($fakeRecordTwo, $mockSuccessTwo, $mockFailureTwo);
+        $this->mockSerializer->shouldReceive('deserialize')->andReturn($this->fakeRecord);
 
-        $mockMessage = Mockery::mock(Message::class);
-        $mockMessage->payload = valueOf(encode(1, $schemaId, json_encode($fakeRecord)));
+        $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->recordProcessor->subscribe($fakeRecordTwo, $mockSuccessFnTwo, $mockFailureFnTwo);
+        $this->recordProcessor->process($this->mockMessage);
 
-        $this->mockSerializer->shouldReceive('deserialize')->andReturn($fakeRecord);
-        $recordProcessor->process($mockMessage);
-
-        $mockSuccess->shouldBeCalled()->once();
-        $mockFailure->shouldNotHaveBeenCalled();
-        $mockSuccessTwo->shouldNotHaveBeenCalled();
-        $mockFailureTwo->shouldNotHaveBeenCalled();
+        $this->mockSuccessFn->shouldBeCalled()->once();
+        $this->mockFailureFn->shouldNotHaveBeenCalled();
+        $mockSuccessFnTwo->shouldNotHaveBeenCalled();
+        $mockFailureFnTwo->shouldNotHaveBeenCalled();
     }
 
-    public function testNoSuccessOrFailureCalledWhenNoHandlerIsRegisteredForClass()
+    public function testNoSuccessOrFailureCalled_WhenNoHandlerIsRegisteredForMessageClass()
     {
         $this->expectNotToPerformAssertions();
 
         $fakeRecordTwo = FakeFactory::fakeRecordTwo();
-        $mockSuccess = new MockeryCallableMock();
-        $mockFailure = new MockeryCallableMock();
-        $schemaId = $this->faker->randomDigitNotNull;
+
+        $schemaId = $this->faker->randomNumber(1);
 
         $this->mockRegistry
           ->shouldReceive('schemaId')
           ->with('fake-record-two-value', Mockery::type(AvroSchema::class))
           ->andReturn($schemaId);
 
-        $recordProcessor = new RecordProcessor($this->mockRegistry, $this->mockSerializer);
-
-        $recordProcessor->subscribe($fakeRecordTwo, $mockSuccess, $mockFailure);
-
-        $mockMessage = Mockery::mock(Message::class);
-
-        $mockMessage->payload = valueOf(
-          encode(1, $this->faker->randomDigitNotNull, json_encode(FakeFactory::fakeRecordTwo()))
+        $this->mockMessage->payload = valueOf(
+          encode(1, $this->faker->randomNumber(2), json_encode($this->fakeRecord))
         );
-        $recordProcessor->process($mockMessage);
 
-        $mockSuccess->shouldNotHaveBeenCalled();
-        $mockFailure->shouldNotHaveBeenCalled();
+        $this->recordProcessor->subscribe($fakeRecordTwo, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->recordProcessor->process($this->mockMessage);
+
+        $this->mockSuccessFn->shouldNotHaveBeenCalled();
+        $this->mockFailureFn->shouldNotHaveBeenCalled();
     }
+
+    //    public function testDoNotSendToFailureTopic_WhenOptionIsDisabled()
+    //    {
+    //        $this->mockSuccessFn = new MockeryCallableMock();
+    //        $this->mockSuccessFn->shouldBeCalled()->andThrow(Exception::class);
+    //        $this->mockFailureFn = new MockeryCallableMock();
+    //        $this->recordProcessor->setShouldSendToFailureTopic(false);
+    //
+    //    }
 
 }

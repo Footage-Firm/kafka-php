@@ -71,7 +71,7 @@ class RecordProcessor
             try {
                 return $handler->success($record);
             } catch (Throwable $t) {
-                return $this->retry($record);
+                return $this->retry($record, $handler);
             }
         }
     }
@@ -121,15 +121,15 @@ class RecordProcessor
 
     private function getHandlerBySchemaId(int $schemaId): ?MessageHandler
     {
-        $handler = null;
+        $matchingHandler = null;
         foreach ($this->handlers as $i => $handler) {
             if ($handler->getSchemaId() === $schemaId) {
-                $handler = $this->handlers[$i];
+                $matchingHandler = $this->handlers[$i];
                 break;
             }
         }
 
-        return $handler;
+        return $matchingHandler;
     }
 
     private function getHandlerForMessage(Message $message): ?MessageHandler
@@ -156,6 +156,18 @@ class RecordProcessor
     public function getHandlers(): array
     {
         return $this->handlers;
+    }
+
+    public function setShouldSendToFailureTopic(bool $shouldSendToFailureTopic): self
+    {
+        $this->shouldSendToFailureTopic = $shouldSendToFailureTopic;
+        return $this;
+    }
+
+    public function setNumRetries(int $numRetries): self
+    {
+        $this->numRetries = $numRetries;
+        return $this;
     }
 
 
