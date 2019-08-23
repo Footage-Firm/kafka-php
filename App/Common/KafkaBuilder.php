@@ -34,6 +34,11 @@ abstract class KafkaBuilder
     /** @var Registry */
     protected $registry;
 
+    /** @var string[] */
+    protected $brokers;
+
+    protected $schemaRegistryUrl;
+
     abstract protected function defaultTopicConfig(): TopicConf;
 
     public function __construct(
@@ -45,6 +50,8 @@ abstract class KafkaBuilder
       Registry $registry = null,
       KafkaSerializerInterface $serializer = null
     ) {
+        $this->brokers = $brokers;
+        $this->schemaRegistryUrl = $schemaRegistryUrl;
         $this->registry = $registry ?? $this->createRegistry($schemaRegistryUrl);
         $this->serializer = $serializer ?? new AvroSerializer($this->registry, true, true);
         $this->logger = $logger ?? new Logger('kafka');
