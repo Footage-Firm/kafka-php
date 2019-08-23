@@ -3,7 +3,6 @@
 namespace App\Consumer;
 
 use App\Common\KafkaBuilder;
-use App\Consumer\Exception\ConsumerException;
 use App\Producer\ProducerBuilder;
 use App\Serializers\KafkaSerializerInterface;
 use FlixTech\SchemaRegistryApi\Registry;
@@ -76,11 +75,6 @@ class ConsumerBuilder extends KafkaBuilder
 
     public function setNumRetries(int $numRetries): self
     {
-        if ($numRetries > self::MAX_RETRIES || $numRetries < 0) {
-            throw new ConsumerException(sprintf('Invalid number of retries. Retries should be between 0 and %s.',
-              self::MAX_RETRIES));
-        }
-
         $this->numRetries = $numRetries;
         return $this;
     }
