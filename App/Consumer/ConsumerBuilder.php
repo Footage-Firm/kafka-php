@@ -2,7 +2,11 @@
 
 namespace App\Consumer;
 
+use App\Common\ConfigOptions;
+use App\Common\ConsumerConfigOptions;
 use App\Common\KafkaBuilder;
+use App\Consumer\Exception\ConsumerException;
+use App\Producer\Producer;
 use App\Producer\ProducerBuilder;
 use App\Serializers\KafkaSerializerInterface;
 use FlixTech\SchemaRegistryApi\Registry;
@@ -20,19 +24,13 @@ class ConsumerBuilder extends KafkaBuilder
 
     protected const DEFAULT_OFFSET = RD_KAFKA_OFFSET_BEGINNING;
 
-    // todo - what is a sane default timeout?
-    protected const DEFAULT_TIMEOUT = 1000;
-
-    protected const DEFAULT_OFfSET_RESET = 'earliest';
-
-    private $timeout;
+    protected const DEFAULT_OFFSET_RESET = 'earliest';
 
     private $groupId;
 
     private $offsetReset;
 
     private $numRetries = self::DEFAULT_RETRIES;
-
 
     public function __construct(
       array $brokers,
@@ -43,7 +41,6 @@ class ConsumerBuilder extends KafkaBuilder
       TopicConf $topicConf = null,
       Registry $registry = null,
       KafkaSerializerInterface $serializer = null
-
     ) {
         parent::__construct($brokers, $schemaRegistryUrl, $logger, $config, $topicConf, $registry, $serializer);
         $this->groupId = $groupId;
@@ -54,27 +51,35 @@ class ConsumerBuilder extends KafkaBuilder
 
     public function build(): Consumer
     {
+        $configDump = $this->config->dump();
+
         $this->config->setDefaultTopicConf($this->topicConfig);
         $kafkaConsumer = new KafkaConsumer($this->config);
-        $recordProcessor = $this->createRecordProcessor();
+        $failureProducer = $this->createFailureProducer($configDump);
+        $recordProcessor = $this->createRecordProcessor($failureProducer);
 
-        return new Consumer($kafkaConsumer, $this->serializer, $this->logger, $this->registry, $recordProcessor);
+        return new Consumer($kafkaConsumer, $this->serializer, $this->logger, $recordProcessor);
     }
 
     public function getOffsetReset(): string
     {
-        return $this->offsetReset ?? static::DEFAULT_OFfSET_RESET;
+        return $this->offsetReset ?? static::DEFAULT_OFFSET_RESET;
     }
 
     public function setGroupId(string $groupId)
     {
         $this->groupId = $groupId;
-        $this->config->set('group.id', $groupId);
+        $this->config->set(ConsumerConfigOptions::GROUP_ID, $groupId);
         return $this;
     }
 
     public function setNumRetries(int $numRetries): self
     {
+        if ($numRetries > self::MAX_RETRIES || $numRetries < 0) {
+            throw new ConsumerException(
+              sprintf('Invalid retry number. Retries must be between 0 and %s', self::MAX_RETRIES)
+            );
+        }
         $this->numRetries = $numRetries;
         return $this;
     }
@@ -82,7 +87,7 @@ class ConsumerBuilder extends KafkaBuilder
     private function createDefaultTopicConfig(): TopicConf
     {
         $topicConfig = new TopicConf();
-        $topicConfig->set('auto.offset.reset', $this->getOffsetReset());
+        $topicConfig->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->getOffsetReset());
         return $topicConfig;
     }
 
@@ -93,16 +98,46 @@ class ConsumerBuilder extends KafkaBuilder
 
     protected function disableAutoCommit(): self
     {
-        $this->config->set('auto.commit.enable', 'false');
-        $this->config->set('auto.commit.interval.ms', '0');
-        $this->config->set('enable.auto.offset.store', 'false');
+        $this->config->set(ConsumerConfigOptions::AUTO_COMMIT, 'false');
+        $this->config->set(ConsumerConfigOptions::AUTO_COMMIT_INTERVAL, '0');
+        $this->config->set(ConsumerConfigOptions::ENABLE_AUTO_OFFSET_STORE, 'false');
         return $this;
     }
 
-    private function createRecordProcessor(): RecordProcessor
+    private function createRecordProcessor(Producer $failureProducer): RecordProcessor
     {
-        $failureProducer = (new ProducerBuilder($this->brokers, $this->schemaRegistryUrl))->build();
-        return (new RecordProcessor($this->registry, $this->serializer, $this->groupId, $failureProducer))
-          ->setNumRetries($this->numRetries);
+        $recordProcessor = new RecordProcessor($this->registry, $this->serializer, $this->groupId, $failureProducer);
+
+        return $recordProcessor
+          ->setNumRetries($this->numRetries)
+          ->setShouldSendToFailureTopic($this->shouldSendToFailureTopic);
+    }
+
+    private function createFailureProducer(array $configDump)
+    {
+
+        $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl);
+
+        if ($this->isUsingSsl($configDump)) {
+            $builder->setSslData(
+              $configDump[ConfigOptions::CA_PATH],
+              $configDump[ConfigOptions::CERT_PATH],
+              $configDump[ConfigOptions::KEY_PATH],
+              );
+        }
+
+        return $builder->build();
+    }
+
+    private function isUsingSsl(array $configDump): bool
+    {
+        $necessaryKeys = [
+          ConfigOptions::SECURITY_PROTOCOL,
+          ConfigOptions::CERT_PATH,
+          ConfigOptions::KEY_PATH,
+          ConfigOptions::CA_PATH,
+        ];
+        return !array_diff_key(array_flip($necessaryKeys), $configDump)
+          && $config[ConfigOptions::SECURITY_PROTOCOL] = ConfigOptions::SSL;
     }
 }
