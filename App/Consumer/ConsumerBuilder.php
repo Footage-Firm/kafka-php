@@ -101,7 +101,7 @@ class ConsumerBuilder extends KafkaBuilder
 
     private function createRecordProcessor(): RecordProcessor
     {
-        $failureProducer = (new ProducerBuilder($this->brokers, $this->schemaRegistryUrl))->$this->build();
+        $failureProducer = (new ProducerBuilder($this->brokers, $this->schemaRegistryUrl))->build();
         return (new RecordProcessor($this->registry, $this->serializer, $this->groupId, $failureProducer))
           ->setNumRetries($this->numRetries);
     }
