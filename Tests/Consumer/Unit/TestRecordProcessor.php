@@ -3,11 +3,13 @@
 namespace Test\Consumer\Unit;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
+use App\Common\TopicFormatter;
 use App\Consumer\RecordProcessor;
 use App\Producer\Producer;
 use App\Serializers\KafkaSerializerInterface;
-use App\Traits\RecordFormatting;
+use App\Traits\RecordFormatter;
 use AvroSchema;
+use Exception;
 use FlixTech\SchemaRegistryApi\Registry;
 use Mockery;
 use PHPUnit\Framework\TestCase;
@@ -21,7 +23,7 @@ use function Widmogrod\Functional\valueOf;
 class TestRecordProcessor extends TestCase
 {
 
-    use WithFaker, RecordFormatting;
+    use WithFaker, RecordFormatter;
 
     private $mockRegistry;
 
@@ -30,8 +32,9 @@ class TestRecordProcessor extends TestCase
 
     private $mockFailureProducer;
 
-    private $groupId;
+    private $fakeGroupId;
 
+    /** @var RecordProcessor */
     private $recordProcessor;
 
     private $mockSuccessFn;
@@ -42,35 +45,57 @@ class TestRecordProcessor extends TestCase
 
     private $mockMessage;
 
+    private $fakeSchemaId;
+
     public function setUp(): void
     {
         parent::setUp();
+
         $this->initFaker();
-        $this->mockRegistry = Mockery::mock(Registry::class);
-        $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class)->shouldIgnoreMissing();
-        $this->mockFailureProducer = Mockery::mock(Producer::class);
-        $this->groupId = $this->faker->word;
+
+        $this->fakeRecord = FakeFactory::fakeRecord();
+
+        $this->initMockSchemaRegistry();
+        $this->initMockSerializer();
+
         $this->mockSuccessFn = new MockeryCallableMock();
         $this->mockFailureFn = new MockeryCallableMock();
-        $this->fakeRecord = FakeFactory::fakeRecord();
+
+        $this->mockFailureProducer = Mockery::mock(Producer::class);
+        $this->fakeGroupId = $this->faker->word;
+        $this->initRecordProcessor();
+    }
+
+    private function initMockSerializer(): void
+    {
+        $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class)->shouldIgnoreMissing();
+        $this->mockSerializer->shouldReceive('deserialize')->andReturn($this->fakeRecord);
+    }
+
+    private function initMockSchemaRegistry(): void
+    {
+        $this->mockRegistry = Mockery::mock(Registry::class);
         $this->mockMessage = Mockery::mock(Message::class);
+        $this->fakeSchemaId = $this->faker->randomNumber(1);
+        $this->mockMessage->payload = valueOf(encode(1, $this->fakeSchemaId, json_encode($this->fakeRecord)));
+        $this->mockRegistry
+          ->shouldReceive('schemaId')
+          ->with('fake-record-value', Mockery::type(AvroSchema::class))
+          ->andReturn($this->fakeSchemaId);
+    }
+
+    private function initRecordProcessor()
+    {
         $this->recordProcessor = new RecordProcessor(
           $this->mockRegistry,
           $this->mockSerializer,
-          $this->groupId,
+          $this->fakeGroupId,
           $this->mockFailureProducer
         );
     }
 
     public function testSubscribeAddsHandler()
     {
-        $schemaId = $this->faker->randomDigitNotNull;
-
-        $this->mockRegistry
-          ->shouldReceive('schemaId')
-          ->with('fake-record-value', Mockery::type(AvroSchema::class))
-          ->andReturn($schemaId);
-
         $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
 
         $handlers = $this->recordProcessor->getHandlers();
@@ -84,13 +109,6 @@ class TestRecordProcessor extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $schemaId = $this->faker->randomDigitNotNull;
-
-        $this->mockRegistry
-          ->shouldReceive('schemaId')
-          ->with('fake-record-value', Mockery::type(AvroSchema::class))
-          ->andReturn($schemaId);
-
         $fakeRecordTwo = FakeFactory::fakeRecordTwo();
         $mockSuccessFnTwo = new MockeryCallableMock();
         $mockFailureFnTwo = new MockeryCallableMock();
@@ -101,9 +119,6 @@ class TestRecordProcessor extends TestCase
           ->with('fake-record-two-value', Mockery::type(AvroSchema::class))
           ->andReturn($schemaIdTwo);
 
-        $this->mockMessage->payload = valueOf(encode(1, $schemaId, json_encode($this->fakeRecord)));
-
-        $this->mockSerializer->shouldReceive('deserialize')->andReturn($this->fakeRecord);
 
         $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
         $this->recordProcessor->subscribe($fakeRecordTwo, $mockSuccessFnTwo, $mockFailureFnTwo);
@@ -120,18 +135,14 @@ class TestRecordProcessor extends TestCase
         $this->expectNotToPerformAssertions();
 
         $fakeRecordTwo = FakeFactory::fakeRecordTwo();
-
-        $schemaId = $this->faker->randomNumber(1);
-
         $this->mockRegistry
           ->shouldReceive('schemaId')
           ->with('fake-record-two-value', Mockery::type(AvroSchema::class))
-          ->andReturn($schemaId);
+          ->andReturn($this->fakeSchemaId);
 
         $this->mockMessage->payload = valueOf(
           encode(1, $this->faker->randomNumber(2), json_encode($this->fakeRecord))
         );
-
         $this->recordProcessor->subscribe($fakeRecordTwo, $this->mockSuccessFn, $this->mockFailureFn);
         $this->recordProcessor->process($this->mockMessage);
 
@@ -139,13 +150,41 @@ class TestRecordProcessor extends TestCase
         $this->mockFailureFn->shouldNotHaveBeenCalled();
     }
 
-    //    public function testDoNotSendToFailureTopic_WhenOptionIsDisabled()
-    //    {
-    //        $this->mockSuccessFn = new MockeryCallableMock();
-    //        $this->mockSuccessFn->shouldBeCalled()->andThrow(Exception::class);
-    //        $this->mockFailureFn = new MockeryCallableMock();
-    //        $this->recordProcessor->setShouldSendToFailureTopic(false);
-    //
-    //    }
+    public function testDoNotSendToFailureTopic_WhenOptionIsDisabled()
+    {
+        $this->expectNotToPerformAssertions();
+
+        $this->mockSuccessFn->shouldBeCalled()->andThrow(Exception::class);
+
+        $this->recordProcessor->setShouldSendToFailureTopic(false);
+        $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->recordProcessor->process($this->mockMessage);
+
+        $this->mockFailureProducer->shouldNotHaveBeenCalled();
+    }
+
+    public function testCorrectNumberOfTriesAreRun()
+    {
+        $this->expectNotToPerformAssertions();
+
+        $numRetries = $this->faker->randomNumber(1);
+
+        $this->mockFailureProducer->shouldReceive('produce')
+          ->times($numRetries + 1)
+          ->with(
+            $this->fakeRecord,
+            sprintf('%s%s-%s', TopicFormatter::FAILURE_TOPIC_PREFIX, $this->fakeGroupId, 'fake-record')
+          );
+
+        $this->initRecordProcessor();
+        $this->recordProcessor->setNumRetries($numRetries);
+
+        $this->mockSuccessFn->shouldBeCalled()->times($numRetries + 1)->andThrow(Exception::class);
+
+        $this->recordProcessor->setNumRetries($numRetries);
+        $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->recordProcessor->process($this->mockMessage);
+    }
+
 
 }

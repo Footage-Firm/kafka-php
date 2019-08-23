@@ -6,7 +6,8 @@ use App\Common\TopicFormatter;
 use App\Events\BaseRecord;
 use App\Producer\Producer;
 use App\Serializers\KafkaSerializerInterface;
-use App\Traits\RecordFormatting;
+use App\Traits\RecordFormatter;
+use App\Traits\ShortClassName;
 use AvroSchema;
 use FlixTech\SchemaRegistryApi\Registry;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -18,18 +19,15 @@ use function Widmogrod\Functional\valueOf;
 class RecordProcessor
 {
 
-    use RecordFormatting;
-
-    public const DEFAULT_RETRIES = 3;
-
+    use RecordFormatter;
+    use ShortClassName;
+    
     /** @var MessageHandler[] */
     private $handlers = [];
 
     private $registry;
 
     private $serializer;
-
-    private $numRetries = self::DEFAULT_RETRIES;
 
     private $shouldSendToFailureTopic = true;
 
@@ -45,7 +43,7 @@ class RecordProcessor
     ) {
         $this->registry = $registry;
         $this->serializer = $serializer;
-        $this->groupdId = $groupId;
+        $this->groupId = $groupId;
         $this->failureProducer = $failureProducer;
     }
 
@@ -54,7 +52,7 @@ class RecordProcessor
       callable $success,
       callable $failure = null
     ): void {
-        $this->handlers[$this->className($record)] = new MessageHandler(
+        $this->handlers[self::shortClassName($record)] = new MessageHandler(
           $record,
           $success,
           $this->schemaIdFromRecord($record),
@@ -74,6 +72,23 @@ class RecordProcessor
                 return $this->retry($record, $handler);
             }
         }
+    }
+
+    public function getHandlers(): array
+    {
+        return $this->handlers;
+    }
+
+    public function setShouldSendToFailureTopic(bool $shouldSendToFailureTopic): self
+    {
+        $this->shouldSendToFailureTopic = $shouldSendToFailureTopic;
+        return $this;
+    }
+
+    public function setNumRetries(int $numRetries): self
+    {
+        $this->numRetries = $numRetries;
+        return $this;
     }
 
     private function retry(BaseRecord $record, MessageHandler $handler, int $currentTry = 0)
@@ -152,23 +167,5 @@ class RecordProcessor
         $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
         $this->failureProducer->produce($record, $topic);
     }
-
-    public function getHandlers(): array
-    {
-        return $this->handlers;
-    }
-
-    public function setShouldSendToFailureTopic(bool $shouldSendToFailureTopic): self
-    {
-        $this->shouldSendToFailureTopic = $shouldSendToFailureTopic;
-        return $this;
-    }
-
-    public function setNumRetries(int $numRetries): self
-    {
-        $this->numRetries = $numRetries;
-        return $this;
-    }
-
 
 }

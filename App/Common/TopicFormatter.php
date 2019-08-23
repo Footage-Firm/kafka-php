@@ -3,15 +3,18 @@
 namespace App\Common;
 
 use App\Events\BaseRecord;
+use App\Traits\ShortClassName;
 
 class TopicFormatter
 {
+
+    use ShortClassName;
 
     public const FAILURE_TOPIC_PREFIX = 'fail-';
 
     public static function topicFromRecord(BaseRecord $record): string
     {
-        $className = self::className($record);
+        $className = self::shortClassName($record);
         return self::toKebabCase($className);
     }
 
@@ -27,7 +30,8 @@ class TopicFormatter
 
     public static function consumerFailureTopic(BaseRecord $record, string $groupId)
     {
-        return sprintf('%s%s-%s', self::FAILURE_TOPIC_PREFIX, $groupId, self::className($record));
+        return sprintf('%s%s-%s', self::FAILURE_TOPIC_PREFIX, $groupId,
+          self::toKebabCase(self::shortClassName($record)));
     }
 
     private static function toKebabCase(string $str): string
