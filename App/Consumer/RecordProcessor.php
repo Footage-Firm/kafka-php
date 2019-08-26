@@ -22,6 +22,8 @@ class RecordProcessor
     use RecordFormatter;
     use ShortClassName;
 
+    public const DEFAULT_RETRIES = 2;
+
     /** @var MessageHandler[] */
     private $handlers = [];
 
@@ -34,6 +36,8 @@ class RecordProcessor
     private $groupId;
 
     private $failureProducer;
+
+    private $numRetries = self::DEFAULT_RETRIES;
 
     public function __construct(
       Registry $registry,
@@ -75,22 +79,10 @@ class RecordProcessor
                     // sent after the consume timeout
                     break;
                 default:
-                    $this->handleFailure($message, $re);
+                    $this->handleFailure($handler, $record);
                     break;
             }
         }
-    }
-
-    private function success(Message $message, BaseRecord $record, MessageHandler $handler)
-    {
-        try {
-            $handler->success($record);
-        } catch (Throwable $t) {
-            $this->retry($record, $handler);
-        }
-
-        $this->kafkaClient->commit($message);
-
     }
 
     public function getHandlers(): array
@@ -115,6 +107,15 @@ class RecordProcessor
         $handler->fail($record);
         if ($this->shouldSendToFailureTopic) {
             $this->sendToFailureTopic($record);
+        }
+    }
+
+    private function success(Message $message, BaseRecord $record, MessageHandler $handler)
+    {
+        try {
+            $handler->success($record);
+        } catch (Throwable $t) {
+            $this->retry($record, $handler);
         }
     }
 
@@ -186,6 +187,4 @@ class RecordProcessor
         $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
         $this->failureProducer->produce($record, $topic);
     }
-
-
 }
