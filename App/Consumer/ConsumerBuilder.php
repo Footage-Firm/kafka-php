@@ -22,8 +22,6 @@ class ConsumerBuilder extends KafkaBuilder
 
     public const MAX_RETRIES = 3;
 
-    protected const DEFAULT_OFFSET = RD_KAFKA_OFFSET_BEGINNING;
-
     protected const DEFAULT_OFFSET_RESET = 'earliest';
 
     private $groupId;
@@ -58,7 +56,7 @@ class ConsumerBuilder extends KafkaBuilder
         $failureProducer = $this->createFailureProducer($configDump);
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
-        return new Consumer($kafkaConsumer, $this->serializer, $this->logger, $recordProcessor);
+        return new Consumer($kafkaConsumer, $this->logger, $recordProcessor);
     }
 
     public function getOffsetReset(): string
