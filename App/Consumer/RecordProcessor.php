@@ -22,8 +22,6 @@ class RecordProcessor
     use RecordFormatter;
     use ShortClassName;
 
-    public const DEFAULT_RETRIES = 2;
-
     /** @var MessageHandler[] */
     private $handlers = [];
 
@@ -37,7 +35,7 @@ class RecordProcessor
 
     private $failureProducer;
 
-    private $numRetries = self::DEFAULT_RETRIES;
+    private $numRetries = ConsumerBuilder::DEFAULT_RETRIES;
 
     public function __construct(
       Registry $registry,

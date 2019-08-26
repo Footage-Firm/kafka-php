@@ -2,12 +2,10 @@
 
 namespace App\Consumer;
 
-use App\Consumer\Exception\ConsumerException;
+use App\Consumer\Exceptions\ConsumerException;
 use App\Events\BaseRecord;
-use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatter;
 use App\Traits\ShortClassName;
-use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use RdKafka\KafkaConsumer;
 use RdKafka\KafkaConsumerTopic;
@@ -17,11 +15,9 @@ use Throwable;
 class Consumer
 {
 
+
     use RecordFormatter;
     use ShortClassName;
-
-    /** @var KafkaSerializerInterface */
-    private $serializer;
 
     /** @var KafkaConsumer */
     private $kafkaClient;
@@ -32,14 +28,14 @@ class Consumer
     /** @var RecordProcessor */
     private $recordProcessor;
 
-    public function __construct(
-      KafkaConsumer $kafkaClient,
-      //      KafkaSerializerInterface $serializer,
-      LoggerInterface $logger,
-      RecordProcessor $recordProcessor
-    ) {
+    protected $timeout = ConsumerBuilder::DEFAULT_TIMEOUT_MS;
+
+    // The lifetime of the consumer in seconds
+    private $consumerLifetime;
+
+    public function __construct(KafkaConsumer $kafkaClient, LoggerInterface $logger, RecordProcessor $recordProcessor)
+    {
         $this->kafkaClient = $kafkaClient;
-        //        $this->serializer = $serializer;
         $this->logger = $logger;
         $this->recordProcessor = $recordProcessor;
     }
@@ -59,58 +55,65 @@ class Consumer
     public function consume($topics = []): void
     {
         $topics = $this->determineTopics($topics);
-
-        $this->subscribeToTopics($topics);
-
-        $this->poll();
-    }
-
-    private function subscribeToTopics(array $topics)
-    {
         try {
             $this->kafkaClient->subscribe($topics);
-        } catch (Throwable $e) {
-            $this->logger->log(
-              Logger::ERROR,
-              sprintf('Error subscribing to topics %s: %s ', implode(',', $topics), $e->getMessage())
-            );
-            throw $e;
-        }
-    }
-
-    private function poll(): void
-    {
-        try {
-            while (true) {
-                // todo -- what is a good timeout here?
-                $message = $this->kafkaClient->consume(1000);
-                if ($message) {
-                    $this->recordProcessor->process($message);
-                }
-            }
+            $this->poll();
         } catch (Throwable $throwable) {
             $this->logger->error($throwable->getMessage());
-            throw $throwable;
         } finally {
             $this->kafkaClient->unsubscribe();
         }
     }
 
-    private function determineTopics($topics = []): array
-    {
-        if (!is_array($topics)) {
-            $topics = [$topics];
-        }
-
-        return count($topics) > 0 ? $topics : $this->determineDefaultTopics();
-    }
-    
     public function getMetadata(bool $all_topics, ?KafkaConsumerTopic $only_topic, int $timeout_ms): Metadata
     {
         return $this->kafkaClient->getMetadata($all_topics, $only_topic, $timeout_ms);
     }
 
-    public function determineDefaultTopics(): array
+    public function setConsumerLifetime(int $timeoutSeconds): self
+    {
+        $this->consumerLifetime = $timeoutSeconds;
+        return $this;
+    }
+
+    public function setTimeout(int $timeout): self
+    {
+        $this->timeout = $timeout;
+        return $this;
+    }
+
+    private function poll(): void
+    {
+        $time = time();
+        while (true) {
+            if ($this->consumerLifetimeReached($time)) {
+                break;
+            }
+
+            $message = $this->kafkaClient->consume($this->timeout);
+            if ($message) {
+                $this->recordProcessor->process($message);
+            }
+        }
+    }
+
+    private function consumerLifetimeReached(int $time): bool
+    {
+        if ($this->consumerLifetime !== null) {
+            return time() - $time > $this->consumerLifetime;
+        }
+
+        return false;
+    }
+
+    private function determineTopics($topics = []): array
+    {
+        $topics = $topics ?? [];
+        $topics = is_array($topics) ? $topics : [$topics];
+        return count($topics) > 0 ? $topics : $this->determineDefaultTopics();
+    }
+
+    private function determineDefaultTopics(): array
     {
         $handlers = $this->recordProcessor->getHandlers();
         if (count($handlers) < 1) {
@@ -119,4 +122,6 @@ class Consumer
 
         return array_keys($handlers);
     }
+
+
 }

@@ -24,9 +24,13 @@ class ConsumerBuilder extends KafkaBuilder
 
     protected const DEFAULT_OFFSET_RESET = 'earliest';
 
+    public const DEFAULT_TIMEOUT_MS = 1000;
+
     private $groupId;
 
     private $offsetReset;
+
+    private $timeout;
 
     private $numRetries = self::DEFAULT_RETRIES;
 
@@ -56,7 +60,12 @@ class ConsumerBuilder extends KafkaBuilder
         $failureProducer = $this->createFailureProducer($configDump);
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
-        return new Consumer($kafkaConsumer, $this->logger, $recordProcessor);
+        $consumer = new Consumer($kafkaConsumer, $this->logger, $recordProcessor);
+        if ($this->timeout !== null) {
+            $consumer->setTimeout($this->timeout);
+        }
+
+        return $consumer;
     }
 
     public function getOffsetReset(): string
@@ -80,6 +89,11 @@ class ConsumerBuilder extends KafkaBuilder
         }
         $this->numRetries = $numRetries;
         return $this;
+    }
+
+    public function setTimeout(int $timeout)
+    {
+        $this->timeout = $timeout;
     }
 
     private function createDefaultTopicConfig(): TopicConf
