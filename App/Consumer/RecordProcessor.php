@@ -79,7 +79,7 @@ class RecordProcessor
                     // sent after the consume timeout
                     break;
                 default:
-                    $this->handleFailure($handler, $record);
+                    $this->failure($record, $handler);
                     break;
             }
         }
@@ -102,14 +102,6 @@ class RecordProcessor
         return $this;
     }
 
-    public function handleFailure(MessageHandler $handler, BaseRecord $record)
-    {
-        $handler->fail($record);
-        if ($this->shouldSendToFailureTopic) {
-            $this->sendToFailureTopic($record);
-        }
-    }
-
     private function success(Message $message, BaseRecord $record, MessageHandler $handler)
     {
         try {
@@ -122,13 +114,21 @@ class RecordProcessor
     private function retry(BaseRecord $record, MessageHandler $handler, int $currentTry = 0)
     {
         if ($currentTry >= $this->numRetries) {
-            $this->handleFailure($handler, $record);
+            $this->failure($record, $handler);
         } else {
             try {
                 return $handler->success($record);
             } catch (Throwable $t) {
                 $this->retry($record, $handler, $currentTry + 1);
             }
+        }
+    }
+
+    public function failure(BaseRecord $record, MessageHandler $handler)
+    {
+        $handler->fail($record);
+        if ($this->shouldSendToFailureTopic) {
+            $this->sendToFailureTopic($record);
         }
     }
 
