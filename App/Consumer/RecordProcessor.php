@@ -21,7 +21,7 @@ class RecordProcessor
 
     use RecordFormatter;
     use ShortClassName;
-    
+
     /** @var MessageHandler[] */
     private $handlers = [];
 
@@ -66,12 +66,31 @@ class RecordProcessor
 
         if ($handler) {
             $record = $this->serializer->deserialize($message->payload, $handler->getRecord());
-            try {
-                return $handler->success($record);
-            } catch (Throwable $t) {
-                return $this->retry($record, $handler);
+            switch ($message->err) {
+                case RD_KAFKA_RESP_ERR_NO_ERROR:
+                    $this->success($message, $record, $handler);
+                    break;
+                case RD_KAFKA_RESP_ERR__TIMED_OUT:
+                    // NOP. If there are no new messages in the subscribed topic then a message with this error will be
+                    // sent after the consume timeout
+                    break;
+                default:
+                    $this->handleFailure($message, $re);
+                    break;
             }
         }
+    }
+
+    private function success(Message $message, BaseRecord $record, MessageHandler $handler)
+    {
+        try {
+            $handler->success($record);
+        } catch (Throwable $t) {
+            $this->retry($record, $handler);
+        }
+
+        $this->kafkaClient->commit($message);
+
     }
 
     public function getHandlers(): array
@@ -91,6 +110,14 @@ class RecordProcessor
         return $this;
     }
 
+    public function handleFailure(MessageHandler $handler, BaseRecord $record)
+    {
+        $handler->fail($record);
+        if ($this->shouldSendToFailureTopic) {
+            $this->sendToFailureTopic($record);
+        }
+    }
+
     private function retry(BaseRecord $record, MessageHandler $handler, int $currentTry = 0)
     {
         if ($currentTry >= $this->numRetries) {
@@ -101,14 +128,6 @@ class RecordProcessor
             } catch (Throwable $t) {
                 $this->retry($record, $handler, $currentTry + 1);
             }
-        }
-    }
-
-    private function handleFailure(MessageHandler $handler, BaseRecord $record)
-    {
-        $handler->fail($record);
-        if ($this->shouldSendToFailureTopic) {
-            $this->sendToFailureTopic($record);
         }
     }
 
@@ -167,5 +186,6 @@ class RecordProcessor
         $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
         $this->failureProducer->produce($record, $topic);
     }
+
 
 }

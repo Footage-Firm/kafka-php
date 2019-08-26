@@ -78,6 +78,7 @@ class TestRecordProcessor extends TestCase
         $this->mockMessage = Mockery::mock(Message::class);
         $this->fakeSchemaId = $this->faker->randomNumber(1);
         $this->mockMessage->payload = valueOf(encode(1, $this->fakeSchemaId, json_encode($this->fakeRecord)));
+        $this->mockMessage->err = RD_KAFKA_RESP_ERR_NO_ERROR;
         $this->mockRegistry
           ->shouldReceive('schemaId')
           ->with('fake-record-value', Mockery::type(AvroSchema::class))
@@ -186,5 +187,38 @@ class TestRecordProcessor extends TestCase
         $this->recordProcessor->process($this->mockMessage);
     }
 
+    public function testMessageWithTimeoutErrorIsNoop()
+    {
+        $this->expectNotToPerformAssertions();
+
+        $this->mockMessage->err = RD_KAFKA_RESP_ERR__TIMED_OUT;
+        $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->recordProcessor->process($this->mockMessage);
+
+        $this->mockFailureProducer->shouldNotHaveBeenCalled();
+        $this->mockSuccessFn->shouldNotHaveBeenCalled();
+        $this->mockFailureFn->shouldNotHaveBeenCalled();
+    }
+
+    public function testFailureFunctionCalledIfErrorResponseFromKafka()
+    {
+        $this->expectNotToPerformAssertions();
+        
+        $fakeError = $this->faker->numberBetween(RD_KAFKA_RESP_ERR__TIMED_OUT, RD_KAFKA_RESP_ERR_NO_ERROR);
+        $this->mockMessage->err = $fakeError;
+
+        $this->mockFailureProducer->shouldReceive('produce')
+          ->times(1)
+          ->with(
+            $this->fakeRecord,
+            sprintf('%s%s-%s', TopicFormatter::FAILURE_TOPIC_PREFIX, $this->fakeGroupId, 'fake-record')
+          );
+
+        $this->recordProcessor->subscribe($this->fakeRecord, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->recordProcessor->process($this->mockMessage);
+
+        $this->mockFailureFn->shouldHaveBeenCalled();
+
+    }
 
 }
