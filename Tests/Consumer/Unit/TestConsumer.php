@@ -18,11 +18,11 @@ class TestConsumer extends TestCase
 
     use WithFaker;
 
-    private $recordProcessor;
+    private $mockRecordProcessor;
 
     private $logger;
 
-    private $kafkaClient;
+    private $mockDafkaClient;
 
     private $mockRecord;
 
@@ -30,26 +30,26 @@ class TestConsumer extends TestCase
 
     private $mockFailureFn;
 
-    private $consumer;
-
     private $mockMessageHandler;
+
+    private $consumer;
 
     public function setUp(): void
     {
         parent::setUp();
         $this->initFaker();
 
-        $this->recordProcessor = Mockery::mock(RecordProcessor::class);
+        $this->mockRecordProcessor = Mockery::mock(RecordProcessor::class);
         $this->logger = Mockery::mock(LoggerInterface::class);
         $this->mockRecord = Mockery::mock(BaseRecord::class);
         $this->mockMessageHandler = Mockery::mock(MessageHandler::class);
         $this->mockSuccessFn = new MockeryCallableMock();
         $this->mockFailureFn = new MockeryCallableMock();
-        $this->kafkaClient = Mockery::mock(KafkaConsumer::class);
-        $this->kafkaClient->shouldReceive('unsubscribe');
+        $this->mockDafkaClient = Mockery::mock(KafkaConsumer::class);
+        $this->mockDafkaClient->shouldReceive('unsubscribe');
 
 
-        $this->consumer = new Consumer($this->kafkaClient, $this->logger, $this->recordProcessor);
+        $this->consumer = new Consumer($this->mockDafkaClient, $this->logger, $this->mockRecordProcessor);
 
     }
 
@@ -57,7 +57,7 @@ class TestConsumer extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $this->recordProcessor
+        $this->mockRecordProcessor
           ->shouldReceive('subscribe')
           ->with($this->mockRecord, $this->mockSuccessFn, $this->mockFailureFn);
 
@@ -71,11 +71,11 @@ class TestConsumer extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $this->kafkaClient->shouldReceive('subscribe')->once()->with($expectedTopic);
-        $this->kafkaClient->shouldReceive('consume');
+        $this->mockDafkaClient->shouldReceive('subscribe')->once()->with($expectedTopic);
+        $this->mockDafkaClient->shouldReceive('consume');
 
-        $this->recordProcessor->shouldReceive('subscribe');
-        $this->recordProcessor->shouldReceive('getHandlers')->andReturn([$this->mockMessageHandler]);
+        $this->mockRecordProcessor->shouldReceive('subscribe');
+        $this->mockRecordProcessor->shouldReceive('getHandlers')->andReturn([$this->mockMessageHandler]);
 
         $this->consumer->subscribe($this->mockRecord, $this->mockSuccessFn, $this->mockFailureFn);
         $this->consumer->setConsumerLifetime(0);
@@ -93,12 +93,27 @@ class TestConsumer extends TestCase
           [$fakeTopics, $fakeTopics],
         ];
     }
-    
+
     public function testProcessesMessageFromKafka()
     {
         $this->expectNotToPerformAssertions();
         $mockMessage = Mockery::mock(Message::class);
-        $this->kafkaClient->shouldReceive('consume')->andReturn($mockMessage);
-        $this->recordProcessor->shouldReceive('process')->once()->with($mockMessage);
+        $this->mockDafkaClient->shouldReceive('consume')->andReturn($mockMessage);
+        $this->mockRecordProcessor->shouldReceive('process')->once()->with($mockMessage);
+    }
+
+    public function testConsumerDiesAfterLifetimeIsUp()
+    {
+        $this->mockDafkaClient->shouldIgnoreMissing();
+
+        $this->mockRecordProcessor->shouldIgnoreMissing();
+        $this->mockRecordProcessor->shouldReceive('getHandlers')->andReturn([$this->mockMessageHandler]);
+
+        $this->consumer->subscribe($this->mockRecord, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->consumer->setConsumerLifetime(0);
+        $this->consumer->consume();
+        
+        // If the consumer lifetime didn't work we'll never reach this assertion.
+        $this->assertTrue(true);
     }
 }
