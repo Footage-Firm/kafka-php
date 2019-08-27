@@ -4,7 +4,7 @@ namespace App\Consumer\Exceptions;
 
 use Exception;
 
-class ConsumerException extends Exception
+class ConsumerConfigurationException extends Exception
 {
 
 }

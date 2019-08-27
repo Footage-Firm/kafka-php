@@ -5,7 +5,7 @@ namespace App\Consumer;
 use App\Common\ConfigOptions;
 use App\Common\ConsumerConfigOptions;
 use App\Common\KafkaBuilder;
-use App\Consumer\Exception\ConsumerException;
+use App\Consumer\Exceptions\ConsumerConfigurationException;
 use App\Producer\Producer;
 use App\Producer\ProducerBuilder;
 use App\Serializers\KafkaSerializerInterface;
@@ -46,8 +46,8 @@ class ConsumerBuilder extends KafkaBuilder
     ) {
         parent::__construct($brokers, $schemaRegistryUrl, $logger, $config, $topicConf, $registry, $serializer);
         $this->groupId = $groupId;
+        $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
         $this->topicConfig = $topicConf ?? $this->createDefaultTopicConfig();
-        $this->setGroupId($groupId);
         $this->disableAutoCommit();
     }
 
@@ -73,17 +73,10 @@ class ConsumerBuilder extends KafkaBuilder
         return $this->offsetReset ?? static::DEFAULT_OFFSET_RESET;
     }
 
-    public function setGroupId(string $groupId)
-    {
-        $this->groupId = $groupId;
-        $this->config->set(ConsumerConfigOptions::GROUP_ID, $groupId);
-        return $this;
-    }
-
     public function setNumRetries(int $numRetries): self
     {
         if ($numRetries > self::MAX_RETRIES || $numRetries < 0) {
-            throw new ConsumerException(
+            throw new ConsumerConfigurationException(
               sprintf('Invalid retry number. Retries must be between 0 and %s', self::MAX_RETRIES)
             );
         }
@@ -91,9 +84,10 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function setTimeout(int $timeout)
+    public function setTimeout(int $timeout): self
     {
         $this->timeout = $timeout;
+        return $this;
     }
 
     private function createDefaultTopicConfig(): TopicConf

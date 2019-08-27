@@ -2,7 +2,7 @@
 
 namespace App\Consumer;
 
-use App\Consumer\Exceptions\ConsumerException;
+use App\Consumer\Exceptions\ConsumerConfigurationException;
 use App\Events\BaseRecord;
 use App\Traits\RecordFormatter;
 use App\Traits\ShortClassName;
@@ -14,7 +14,6 @@ use Throwable;
 
 class Consumer
 {
-
 
     use RecordFormatter;
     use ShortClassName;
@@ -117,7 +116,7 @@ class Consumer
     {
         $handlers = $this->recordProcessor->getHandlers();
         if (count($handlers) < 1) {
-            throw new ConsumerException('Unable to determine default topics because there are no subscriptions registered.');
+            throw new ConsumerConfigurationException('Unable to determine default topics because there are no subscriptions registered.');
         }
 
         return array_keys($handlers);
