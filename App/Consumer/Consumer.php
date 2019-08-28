@@ -3,7 +3,6 @@
 namespace App\Consumer;
 
 use App\Consumer\Exceptions\ConsumerConfigurationException;
-use App\Events\BaseRecord;
 use App\Traits\RecordFormatter;
 use App\Traits\ShortClassName;
 use Psr\Log\LoggerInterface;
@@ -39,7 +38,7 @@ class Consumer
         $this->recordProcessor = $recordProcessor;
     }
 
-    public function subscribe(BaseRecord $record, callable $handler, ?callable $failure = null): self
+    public function subscribe($record, callable $handler, ?callable $failure = null): self
     {
         $this->recordProcessor->subscribe($record, $handler, $failure);
         return $this;
@@ -59,6 +58,7 @@ class Consumer
             $this->poll();
         } catch (Throwable $throwable) {
             $this->logger->error($throwable->getMessage());
+            throw $throwable;
         } finally {
             $this->kafkaClient->unsubscribe();
         }
@@ -84,25 +84,29 @@ class Consumer
     private function poll(): void
     {
         $time = time();
-        while (true) {
-            if ($this->consumerLifetimeReached($time)) {
-                break;
-            }
+
+        while ($this->stillAlive($time)) {
 
             $message = $this->kafkaClient->consume($this->timeout);
-            if ($message) {
+            if ($message && $message->payload) {
                 $this->recordProcessor->process($message);
+                if (!$message->err) {
+                    $this->kafkaClient->commit($message);
+                }
             }
+
+
         }
     }
 
-    private function consumerLifetimeReached(int $time): bool
+
+    private function stillAlive(int $initialTime): bool
     {
-        if ($this->consumerLifetime !== null) {
-            return time() - $time > $this->consumerLifetime;
+        if ($this->consumerLifetime === null) {
+            return true;
         }
 
-        return false;
+        return time() - $initialTime < $this->consumerLifetime;
     }
 
     private function determineTopics($topics = []): array
