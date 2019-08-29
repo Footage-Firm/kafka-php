@@ -11,12 +11,18 @@ abstract class BaseRecord implements JsonSerializable
 
     private $key;
 
+    private $shortName;
+
     abstract public function schema(): string;
 
     public function name(): string
     {
-        $reflect = new ReflectionClass($this);
-        return $reflect->getShortName();
+        if (!$this->shortName) {
+            $reflect = new ReflectionClass($this);
+            $this->shortName = $reflect->getShortName();
+        }
+
+        return $this->shortName;
     }
 
     public function setKey(?string $key)
