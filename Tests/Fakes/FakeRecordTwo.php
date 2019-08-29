@@ -4,7 +4,7 @@ namespace Tests\Fakes;
 
 use App\Events\BaseRecord;
 
-class FakeRecord extends BaseRecord
+class FakeRecordTwo extends BaseRecord
 {
 
     private $id;
@@ -13,7 +13,7 @@ class FakeRecord extends BaseRecord
 
     private $version = 1;
 
-    public function setId($id): FakeRecord
+    public function setId($id): FakeRecordTwo
     {
         $this->id = $id;
         return $this;
@@ -24,7 +24,7 @@ class FakeRecord extends BaseRecord
         return $this->id;
     }
 
-    public function setName(string $name): FakeRecord
+    public function setName(string $name): FakeRecordTwo
     {
         $this->name = $name;
         return $this;
@@ -35,7 +35,7 @@ class FakeRecord extends BaseRecord
         return <<<SCHEMA
 {
     "type": "record",
-    "name": "{$this->name()}",
+    "name": "FakeRecord",
     "namespace": "testing",
     "fields": [
       { "name": "version", "type": "int", "default": 1},
@@ -48,10 +48,6 @@ SCHEMA;
 
     public function jsonSerialize()
     {
-        return [
-          'id' => $this->encode($this->id),
-          'name' => $this->encode($this->name),
-          'version' => $this->encode($this->version),
-        ];
+        return ['id' => $this->encode($this->id), 'name' => $this->encode($this->name), 'version' => $this->encode(1)];
     }
 }

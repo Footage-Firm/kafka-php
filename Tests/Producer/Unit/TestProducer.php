@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
 use Tests\Fakes\FakeRecord;
-use Tests\Fakes\FakeRecordFactory;
+use Tests\Fakes\FakeFactory;
 use Tests\WithFaker;
 
 class TestProducer extends TestCase
@@ -47,7 +47,7 @@ class TestProducer extends TestCase
         $this->mockKafkaProducer = Mockery::mock(KafkaProducer::class)->shouldIgnoreMissing();
         $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class);
         $this->mockLogger = Mockery::mock(LoggerInterface::class);// new FakeLogger();
-        $this->mockRecord = FakeRecordFactory::fakeRecord();
+        $this->mockRecord = FakeFactory::fakeRecord();
         $this->mockTopicProducer = Mockery::mock(ProducerTopic::class);
 
         $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);

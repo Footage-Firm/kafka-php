@@ -4,6 +4,7 @@ namespace App\Common;
 
 use App\Serializers\AvroSerializer;
 use App\Serializers\KafkaSerializerInterface;
+use FlixTech\SchemaRegistryApi\Registry;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
@@ -28,7 +29,15 @@ abstract class KafkaBuilder
     /** @var LoggerInterface */
     protected $logger;
 
-    protected $shouldProduceFailureRecords = true;
+    protected $shouldSendToFailureTopic = true;
+
+    /** @var Registry */
+    protected $registry;
+
+    /** @var string[] */
+    protected $brokers;
+
+    protected $schemaRegistryUrl;
 
     abstract protected function defaultTopicConfig(): TopicConf;
 
@@ -37,21 +46,26 @@ abstract class KafkaBuilder
       string $schemaRegistryUrl,
       LoggerInterface $logger = null,
       Conf $config = null,
-      TopicConf $topicConfig = null
+      TopicConf $topicConfig = null,
+      Registry $registry = null,
+      KafkaSerializerInterface $serializer = null
     ) {
-        $this->serializer = $this->createSerializer($schemaRegistryUrl);
+        $this->brokers = $brokers;
+        $this->schemaRegistryUrl = $schemaRegistryUrl;
+        $this->registry = $registry ?? $this->createRegistry($schemaRegistryUrl);
+        $this->serializer = $serializer ?? new AvroSerializer($this->registry, true, true);
         $this->logger = $logger ?? new Logger('kafka');
         $this->config = $config ?? new Conf();
         $this->topicConfig = $topicConfig ?? $this->defaultTopicConfig();
-        $this->config->set('metadata.broker.list', implode(',', $brokers));
+        $this->config->set(ConfigOptions::BROKER_LIST, implode(',', $brokers));
     }
 
     public function setSslData(string $caPath, string $certPath, string $keyPath): void
     {
-        $this->config->set('security.protocol', 'ssl');
-        $this->config->set('ssl.ca.location', $caPath);
-        $this->config->set('ssl.certificate.location', $certPath);
-        $this->config->set('ssl.key.location', $keyPath);
+        $this->config->set(ConfigOptions::SECURITY_PROTOCOL, 'ssl');
+        $this->config->set(ConfigOptions::CA_PATH, $caPath);
+        $this->config->set(ConfigOptions::CERT_PATH, $certPath);
+        $this->config->set(ConfigOptions::KEY_PATH, $keyPath);
     }
 
     public function setKafkaErrorCallback(callable $callback): self
@@ -72,13 +86,13 @@ abstract class KafkaBuilder
         return $this;
     }
 
-    public function shouldProduceFailureRecords(bool $shouldProduceFailureRecords): self
+    public function shouldSendToFailureTopic(bool $shouldSendToFailureTopic): self
     {
-        $this->shouldProduceFailureRecords = $shouldProduceFailureRecords;
+        $this->shouldSendToFailureTopic = $shouldSendToFailureTopic;
         return $this;
     }
 
-    private function createSerializer(string $schemaRegistryUrl): KafkaSerializerInterface
+    private function createRegistry(string $schemaRegistryUrl): Registry
     {
         $config = ['base_uri' => $schemaRegistryUrl];
 
@@ -89,10 +103,6 @@ abstract class KafkaBuilder
             $config['auth'] = [$user, $pass];
         }
         $client = new Client($config);
-        $registry = new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
-
-        // todo -- disable new schema creation
-        return new AvroSerializer($registry, true, true);
+        return new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     }
-
 }

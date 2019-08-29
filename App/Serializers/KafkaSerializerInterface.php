@@ -9,5 +9,5 @@ interface KafkaSerializerInterface
 
     public function serialize(BaseRecord $record);
 
-    public function deserialize(string $payload, BaseRecord $record);
+    public function deserialize(string $payload);
 }

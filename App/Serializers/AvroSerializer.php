@@ -3,24 +3,30 @@
 namespace App\Serializers;
 
 use App\Events\BaseRecord;
-use App\Serializers\Traits\SnakeCaseFormatterTrait;
+use App\Traits\RecordFormatter;
 use AvroSchema;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
 use FlixTech\AvroSerializer\Objects\RecordSerializer;
 use FlixTech\SchemaRegistryApi\Registry;
+use GuzzleHttp\Promise\PromiseInterface;
+use function FlixTech\AvroSerializer\Protocol\decode;
+use function Widmogrod\Functional\valueOf;
 
 class AvroSerializer implements KafkaSerializerInterface
 {
 
-    use SnakeCaseFormatterTrait;
+    use RecordFormatter;
 
     private $serializer;
+
+    private $registry;
 
     public function __construct(
       Registry $registry,
       bool $shouldRegisterMissingSchemas = false,
       bool $shouldRegisterMissingSubjects = false
     ) {
+        $this->registry = $registry;
         $this->serializer = $this->createSerializer(
           $registry,
           $shouldRegisterMissingSchemas,
@@ -32,17 +38,18 @@ class AvroSerializer implements KafkaSerializerInterface
     {
         $schema = AvroSchema::parse($record->schema());
         $data = $record->data();
-        $name = str_replace('_', '-', $this->convertToSnakeCase($record->name()));
+        $name = str_replace('_', '-', $this->kebabCase($record->name()));
 
         return $this->serializer->encodeRecord($name . '-value', $schema, $data);
     }
 
-    public function deserialize(string $payload, BaseRecord $record): BaseRecord
+    public function deserialize(string $payload): array
     {
+
+        $schemaName = $this->nameFromEncodedPayload($payload);
         try {
             $decoded = $this->serializer->decodeMessage($payload);
-            $record->decode($decoded);
-            return $record;
+            return [$schemaName => $decoded];
         } catch (AvroDecodingException $e) {
             $prev = $e->getPrevious();
 
@@ -59,6 +66,37 @@ class AvroSerializer implements KafkaSerializerInterface
         }
     }
 
+    private function nameFromEncodedPayload(string $payload): string
+    {
+        $schemaId = $this->getSchemaId($payload);
+        /** @var \AvroRecordSchema $s */
+        $avroRecordSchema = $this->extractValueFromRegistryResponse($this->registry->schemaForId($schemaId));
+        $name = explode('.', $avroRecordSchema->qualified_name());
+        return array_pop($name);
+    }
+
+    private function getSchemaId(string $payload)
+    {
+        $decoded = valueOf(decode($payload));
+        return is_array($decoded) && array_key_exists('schemaId', $decoded)
+          ? $decoded['schemaId']
+          : null;
+
+    }
+
+    private function extractValueFromRegistryResponse($response)
+    {
+        if ($response instanceof PromiseInterface) {
+            $response = $response->wait();
+        }
+
+        if ($response instanceof \Exception) {
+            throw $response;
+        }
+
+        return $response;
+    }
+
     private function createSerializer(
       Registry $registry,
       bool $shouldRegisterMissingSchemas,
@@ -72,6 +110,5 @@ class AvroSerializer implements KafkaSerializerInterface
           ]
         );
     }
-
 
 }
