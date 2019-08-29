@@ -14,8 +14,7 @@ class TopicFormatter
 
     public static function topicFromRecord(BaseRecord $record): string
     {
-        $className = self::shortClassName($record);
-        return self::toKebabCase($className);
+        return self::toKebabCase(self::shortClassName(get_class($record)));
     }
 
     public static function topicFromRecordName(string $recordName): string
@@ -30,8 +29,7 @@ class TopicFormatter
 
     public static function consumerFailureTopic(BaseRecord $record, string $groupId)
     {
-        return sprintf('%s%s-%s', self::FAILURE_TOPIC_PREFIX, $groupId,
-          self::toKebabCase(self::shortClassName($record)));
+        return sprintf('%s%s-%s', self::FAILURE_TOPIC_PREFIX, $groupId, self::topicFromRecord($record));
     }
 
     private static function toKebabCase(string $str): string

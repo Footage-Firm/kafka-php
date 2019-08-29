@@ -5,9 +5,9 @@ namespace App\Traits;
 trait ShortClassName
 {
 
-    public static function shortClassName(object $obj)
+    public static function shortClassName(string $fqClassName)
     {
-        $fqClassNameArr = explode('\\', get_class($obj));
+        $fqClassNameArr = explode('\\', $fqClassName);
         return array_pop($fqClassNameArr);
     }
 }
