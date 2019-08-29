@@ -4,7 +4,7 @@ namespace App\Consumer;
 
 use App\Events\BaseRecord;
 
-class MessageHandler
+class RecordHandler
 {
 
     private $recordType;

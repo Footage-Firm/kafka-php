@@ -15,7 +15,7 @@ class RecordProcessor
     use RecordFormatter;
     use ShortClassName;
 
-    /** @var MessageHandler[] */
+    /** @var RecordHandler[] */
     private $handlers = [];
 
     private $shouldSendToFailureTopic = true;
@@ -35,7 +35,7 @@ class RecordProcessor
     public function subscribe(string $recordName, callable $success, callable $failure = null): void
     {
         $name = self::shortClassName($recordName);
-        $this->handlers[$name] = new MessageHandler(
+        $this->handlers[$name] = new RecordHandler(
           $recordName,
           $success,
           $failure
@@ -75,7 +75,7 @@ class RecordProcessor
         return $this;
     }
 
-    public function handleFailure(BaseRecord $record, MessageHandler $handler = null): void
+    public function handleFailure(BaseRecord $record, RecordHandler $handler = null): void
     {
         $handler = $handler ?? $this->handlers[$record->name()];
         $handler->fail($record);
@@ -85,7 +85,7 @@ class RecordProcessor
         }
     }
 
-    private function retry(BaseRecord $record, MessageHandler $handler, int $currentTry = 0): void
+    private function retry(BaseRecord $record, RecordHandler $handler, int $currentTry = 0): void
     {
         if ($currentTry >= $this->numRetries) {
             $this->handleFailure($record, $handler);
@@ -105,7 +105,7 @@ class RecordProcessor
         $this->failureProducer->produce($record, $topic);
     }
 
-    private function getRecordFromDecoded(array $decodedValue, MessageHandler $handler): BaseRecord
+    private function getRecordFromDecoded(array $decodedValue, RecordHandler $handler): BaseRecord
     {
         $recordType = $handler->getRecordType();
         /** @var BaseRecord $record */
