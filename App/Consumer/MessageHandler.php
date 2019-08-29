@@ -7,8 +7,7 @@ use App\Events\BaseRecord;
 class MessageHandler
 {
 
-    /** @var \App\Events\BaseRecord */
-    private $record;
+    private $recordType;
 
     /** @var callable */
     private $handler;
@@ -19,34 +18,32 @@ class MessageHandler
     /** @var int */
     public $schemaId;
 
-    public function __construct(BaseRecord $record, callable $handler, int $schemaId, ?callable $failure)
-    {
-        $this->record = $record;
+    public $subject;
+
+    public function __construct(
+      string $recordType,
+      callable $handler,
+      ?callable $failure
+    ) {
+        $this->recordType = $recordType;
         $this->handler = $handler;
         $this->failure = $failure;
-        $this->schemaId = $schemaId;
     }
 
-    public function success(BaseRecord $record)
+    public function success(BaseRecord $record): void
     {
-        return ($this->handler)($record);
+        ($this->handler)($record);
     }
 
-    public function fail(BaseRecord $record)
+    public function fail(BaseRecord $record): void
     {
         if ($this->failure) {
             ($this->failure)($record);
         }
     }
 
-    public function getRecord(): BaseRecord
+    public function getRecordType(): string
     {
-        return $this->record;
+        return $this->recordType;
     }
-
-    public function getSchemaId(): int
-    {
-        return $this->schemaId;
-    }
-
 }
