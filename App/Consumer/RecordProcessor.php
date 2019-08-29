@@ -45,7 +45,7 @@ class RecordProcessor
     public function process(array $decoded): void
     {
         $key = key($decoded);
-        $handler = $this->handlers[$key];
+        $handler = $this->handlers[$key] ?? null;
 
 
         if ($handler) {

@@ -35,7 +35,7 @@ class FakeRecord extends BaseRecord
         return <<<SCHEMA
 {
     "type": "record",
-    "name": "FakeRecord",
+    "name": "{$this->name()}",
     "namespace": "testing",
     "fields": [
       { "name": "version", "type": "int", "default": 1},
@@ -48,6 +48,10 @@ SCHEMA;
 
     public function jsonSerialize()
     {
-        return ['id' => $this->encode($this->id), 'name' => $this->encode($this->name), 'version' => $this->encode(1)];
+        return [
+          'id' => $this->encode($this->id),
+          'name' => $this->encode($this->name),
+          'version' => $this->encode($this->version),
+        ];
     }
 }
