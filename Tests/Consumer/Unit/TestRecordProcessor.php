@@ -67,18 +67,6 @@ class TestRecordProcessor extends TestCase
         $this->initRecordProcessor();
     }
 
-    //    private function initMockSchemaRegistry(): void
-    //    {
-    //        $this->mockRegistry = Mockery::mock(Registry::class);
-    //        $this->fakeSchemaId = $this->faker->randomNumber(1);
-    //        $this->mockMessage->payload = valueOf(encode(1, $this->fakeSchemaId, json_encode($this->fakeRecord)));
-    //        $this->mockMessage->err = RD_KAFKA_RESP_ERR_NO_ERROR;
-    //        $this->mockRegistry
-    //          ->shouldReceive('schemaId')
-    //          ->with('fake-record-value', Mockery::type(AvroSchema::class))
-    //          ->andReturn($this->fakeSchemaId);
-    //    }
-
     private function initRecordProcessor(): void
     {
         $this->recordProcessor = new RecordProcessor(
