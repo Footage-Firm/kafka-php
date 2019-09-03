@@ -54,7 +54,7 @@ class ProducerBuilder extends KafkaBuilder
     }
 
 
-    protected function defaultTopicConfig(): TopicConf
+    protected function getDefaultTopicConfig(): TopicConf
     {
         return new TopicConf();
     }
