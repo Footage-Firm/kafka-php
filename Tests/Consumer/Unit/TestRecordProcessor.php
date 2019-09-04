@@ -67,6 +67,11 @@ class TestRecordProcessor extends TestCase
         $this->initRecordProcessor();
     }
 
+    protected function tearDown(): void
+    {
+        Mockery::close();
+    }
+
     private function initRecordProcessor(): void
     {
         $this->recordProcessor = new RecordProcessor(

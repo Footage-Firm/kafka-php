@@ -61,6 +61,11 @@ class TestConsumer extends TestCase
 
     }
 
+    protected function tearDown(): void
+    {
+        Mockery::close();
+    }
+
     public function testSubscribe()
     {
         $this->expectNotToPerformAssertions();
@@ -80,7 +85,6 @@ class TestConsumer extends TestCase
         $this->expectNotToPerformAssertions();
 
         $this->mockKafkaClient->shouldReceive('subscribe')->once()->with($expectedTopic);
-        $this->mockKafkaClient->shouldReceive('consume');
 
         $this->mockRecordProcessor->shouldReceive('subscribe');
         $this->mockRecordProcessor->shouldReceive('getHandlers')

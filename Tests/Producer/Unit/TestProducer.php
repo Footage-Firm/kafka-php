@@ -53,6 +53,11 @@ class TestProducer extends TestCase
         $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);
     }
 
+    protected function tearDown(): void
+    {
+        Mockery::close();
+    }
+
     /**
      * @doesNotPerformAssertions
      */
