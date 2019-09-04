@@ -128,11 +128,11 @@ class TestConsumer extends TestCase
 
         $fakePayload = '';
         $this->mockKafkaClientWithMessage(RD_KAFKA_RESP_ERR_NO_ERROR, '', $fakePayload);
-
+        $this->mockKafkaClient->shouldReceive('commit');
         $this->mockSerializer->shouldReceive('deserialize')->with($fakePayload)->andReturn([]);
 
         $this->mockRecordProcessor->shouldReceive('subscribe')->with(FakeRecord::class, $this->mockSuccessFn, null);
-        $this->mockRecordProcessor->shouldReceive('process')->once()->with([]);
+        $this->mockRecordProcessor->shouldReceive('process')->atLeast()->times(1)->with([]);
         $this->mockRecordProcessor->shouldReceive('getHandlers')
           ->andReturn([FakeRecord::class => $this->mockMessageHandler]);
 
@@ -216,6 +216,5 @@ class TestConsumer extends TestCase
 
         $this->mockKafkaClient->shouldReceive('consume')->andReturn($mockMessage);
         $this->mockKafkaClient->shouldReceive('subscribe')->with([$topic]);
-        $this->mockKafkaClient->shouldReceive('unsubscribe')->once();
     }
 }
