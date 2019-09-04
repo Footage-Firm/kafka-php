@@ -38,14 +38,11 @@ class TestConsumerSchemaEvolution extends TestCase
         // Produce 5 records with EvolvingRecord schema, then update the schema by adding 'NewField' and produce 5 more records
         //
         $topic = $this->faker->word;
-        print "Using topic $topic and group id $this->groupId\n";
         $producer = (new ProducerBuilder($this->brokers, $this->schemaRegistryUrl))
           ->shouldSendToFailureTopic(false)
           ->build();
 
-        print "Producing records with initial schema...\n";
         $originalRecords = $this->produceInitialRecords($producer, $topic);
-        print "Producing records with updated schema...\n";
         $updatedRecords = $this->produceUpdatedRecords($producer, $topic);
 
         //
