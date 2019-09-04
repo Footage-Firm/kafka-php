@@ -19,7 +19,8 @@
     "fzaninotto/faker": "^1.8",
     "monolog/monolog": "^1.24",
     "psr/log": "^1.1",
-    "tmarsteel/mockery-callable-mock": "^2.1"
+    "tmarsteel/mockery-callable-mock": "^2.1",
+    "spatie/async": "^1.0"
   },
   "autoload": {
     "psr-4": {
