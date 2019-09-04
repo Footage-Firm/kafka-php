@@ -9,6 +9,7 @@ use App\Producer\Producer;
 use App\Producer\ProducerBuilder;
 use PHPUnit\Framework\TestCase;
 use Tests\WithFaker;
+use Throwable;
 
 class TestConsumerSchemaEvolution extends TestCase
 {
@@ -21,21 +22,13 @@ class TestConsumerSchemaEvolution extends TestCase
 
     private $groupId;
 
-    private $fileName = 'schemaEvolution.txt';
-
     public function setUp(): void
     {
         parent::setUp();
         $this->initFaker();
         $this->groupId = $this->faker->word;
-    }
-
-    public function tearDown(): void
-    {
-        parent::tearDown();
-        if (file_exists($this->fileName)) {
-            unlink(realpath($this->fileName));
-        }
+        $this->brokers = getenv('KAFKA_URL') ? [getenv('KAFKA_URL')] : $this->brokers;
+        $this->schemaRegistryUrl = getenv('SCHEMA_REGISTRY_URL') ?: $this->schemaRegistryUrl;
     }
 
     public function testConsumerCanReadRecordWithUpdatedSchema(): void
@@ -59,37 +52,38 @@ class TestConsumerSchemaEvolution extends TestCase
         // Create a consumer that listens to the topic with EvolvingRecord. This will first read the events produced
         // with the old schema, then the new schema, and no errors should be thrown.
         //
-        $consumer = (new ConsumerBuilder($this->brokers, $this->groupId, $this->schemaRegistryUrl))->build();
-        $consumer->setConsumerLifetime(45);
+        $consumer = (new ConsumerBuilder($this->brokers, $this->groupId, $this->schemaRegistryUrl))
+            ->setNumRetries(0)
+            ->build();
 
-        $fileName = 'schemaEvolution.txt';
-        $consumer->subscribe(EvolvingRecord::class, function ($record) use ($fileName)
+        $records = [];
+        $consumer->subscribe(EvolvingRecord::class, function (EvolvingRecord $record) use (&$records)
         {
-            file_put_contents($fileName, json_encode($record) . ';', FILE_APPEND | LOCK_EX);
+            array_push($records, $record);
         });
-        $consumer->consume($topic);
 
-        $contents = file_get_contents($fileName);
-        $lines = array_filter(explode(';', $contents));
-        $this->assertCount(10, $lines);
+        $consumer
+            ->setConsumerLifetime(5)
+            ->consume($topic);
+
+        $this->assertCount(10, $records);
 
         $consumedOriginalRecords = [];
         $consumedUpdatedRecords = [];
 
-        foreach ($lines as $line) {
-            $decoded = json_decode($line);
-            if (property_exists($decoded, 'newField')) {
-                $consumedUpdatedRecords[] = $decoded;
+        foreach ($records as $record) {
+            if (property_exists($record, 'newField')) {
+                $consumedUpdatedRecords[] = $record;
                 $updated = array_filter($updatedRecords, function ($updated) use ($decoded)
                 {
                     return $updated->id === $decoded->id;
                 });
                 $this->assertNotNull($updated);
             } else {
-                $consumedOriginalRecords[] = $decoded;
-                $original = array_filter($originalRecords, function ($original) use ($decoded)
+                $consumedOriginalRecords[] = $record;
+                $original = array_filter($originalRecords, function ($original) use ($record)
                 {
-                    return $original->id === $decoded->id;
+                    return $original->id === $record->id;
                 });
                 $this->assertNotNull($original);
             }
