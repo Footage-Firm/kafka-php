@@ -41,7 +41,7 @@ class Consumer
       KafkaSerializerInterface $serializer,
       LoggerInterface $logger,
       RecordProcessor $recordProcessor,
-      int $connectTimeoutMs
+      int $connectTimeoutMs = ConsumerBuilder::DEFAULT_TIMEOUT_MS
     ) {
         $this->kafkaClient = $kafkaClient;
         $this->serializer = $serializer;
