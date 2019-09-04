@@ -39,8 +39,6 @@ abstract class KafkaBuilder
 
     protected $schemaRegistryUrl;
 
-    abstract protected function getDefaultTopicConfig(): TopicConf;
-
     abstract public function build();
 
     public function __construct(
@@ -58,7 +56,7 @@ abstract class KafkaBuilder
         $this->serializer = $serializer ?? new AvroSerializer($this->registry, true, true);
         $this->logger = $logger ?? new Logger('kafka');
         $this->config = $config ?? new Conf();
-        $this->topicConfig = $topicConfig ?? $this->getDefaultTopicConfig();
+        $this->topicConfig = $topicConfig ?? new TopicConf();
         $this->config->set(ConfigOptions::BROKER_LIST, implode(',', $brokers));
     }
 

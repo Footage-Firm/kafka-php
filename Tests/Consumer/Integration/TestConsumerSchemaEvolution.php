@@ -10,7 +10,7 @@ use App\Producer\ProducerBuilder;
 use PHPUnit\Framework\TestCase;
 use Tests\WithFaker;
 
-class TestConsumer extends TestCase
+class TestConsumerSchemaEvolution extends TestCase
 {
 
     use WithFaker;
@@ -28,16 +28,18 @@ class TestConsumer extends TestCase
         parent::setUp();
         $this->initFaker();
         $this->groupId = $this->faker->word;
+    }
 
-
+    public function tearDown(): void
+    {
+        parent::tearDown();
+        if (file_exists($this->fileName)) {
+            unlink(realpath($this->fileName));
+        }
     }
 
     public function testConsumerCanReadRecordWithUpdatedSchema(): void
     {
-
-        if (file_exists($this->fileName)) {
-            unlink(realpath($this->fileName));
-        }
 
         //
         // Produce 5 records with EvolvingRecord schema, then update the schema by adding 'NewField' and produce 5 more records

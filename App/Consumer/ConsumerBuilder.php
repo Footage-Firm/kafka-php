@@ -32,8 +32,11 @@ class ConsumerBuilder extends KafkaBuilder
 
     private $groupId;
 
+    /** @var int */
     private $timeout;
-    
+
+    /** @var int */
+    private $lifetime;
 
     public function __construct(
       array $brokers,
@@ -48,32 +51,34 @@ class ConsumerBuilder extends KafkaBuilder
         parent::__construct($brokers, $schemaRegistryUrl, $logger, $config, $topicConf, $registry, $serializer);
         $this->groupId = $groupId;
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
-
-        $this->topicConfig = $topicConf ?? $this->createDefaultTopicConfig();
+        $this->topicConfig = $topicConf ?? $this->defaultTopicConfig();
         $this->disableAutoCommit();
     }
 
-
     public function build(): Consumer
     {
-        $configDump = $this->config->dump();
-
+        $this->buildTopicConfig();
         $this->config->setDefaultTopicConf($this->topicConfig);
         $kafkaConsumer = new KafkaConsumer($this->config);
-        $failureProducer = $this->createFailureProducer($configDump);
+        $failureProducer = $this->createFailureProducer();
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
         $consumer = new Consumer($kafkaConsumer, $this->serializer, $this->logger, $recordProcessor);
+
         if ($this->timeout !== null) {
             $consumer->setTimeout($this->timeout);
+        }
+
+        if ($this->lifetime !== null) {
+            $consumer->setConsumerLifetime($this->lifetime);
         }
 
         return $consumer;
     }
 
-    public function getOffsetReset(): string
+    public function buildTopicConfig(): void
     {
-        return $this->offsetReset ?? static::DEFAULT_OFFSET_RESET;
+        $this->topicConfig->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
     }
 
     public function setOffsetReset(string $offset): self
@@ -99,22 +104,23 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
+    public function setLifetime(int $lifetime): self
+    {
+        $this->lifetime = $lifetime;
+        return $this;
+    }
+
     public function setTopicConfig(TopicConf $topicConf): self
     {
         $this->topicConfig = $topicConf;
         return $this;
     }
 
-    private function createDefaultTopicConfig(): TopicConf
+    protected function defaultTopicConfig(): TopicConf
     {
         $topicConfig = new TopicConf();
-        $topicConfig->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->getOffsetReset());
+        $topicConfig->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
         return $topicConfig;
-    }
-
-    protected function getDefaultTopicConfig(): TopicConf
-    {
-        return new TopicConf();
     }
 
     protected function disableAutoCommit(): self
@@ -134,8 +140,14 @@ class ConsumerBuilder extends KafkaBuilder
           ->setShouldSendToFailureTopic($this->shouldSendToFailureTopic);
     }
 
-    private function createFailureProducer(array $configDump)
+    private function createFailureProducer(): Producer
     {
+        /**
+         * This is the only way to access details of a Conf object
+         *
+         * @var array $configDump
+         */
+        $configDump = $this->config->dump();
 
         $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl);
 

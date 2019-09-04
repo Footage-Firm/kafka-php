@@ -94,8 +94,8 @@ class Consumer
     private function poll(): void
     {
         $time = time();
-        while ($this->stillAlive($time)) {
 
+        while ($this->stillAlive($time)) {
             $message = $this->kafkaClient->consume($this->timeout);
 
             if (!$message || !is_object($message)) {
@@ -142,6 +142,5 @@ class Consumer
         {
             return $this->kebabCase(self::shortClassName($className));
         }, array_keys($handlers));
-
     }
 }
