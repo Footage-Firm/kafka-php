@@ -34,6 +34,9 @@ class Consumer
     /** @var Pool */
     private $pool;
 
+    /** @var int */
+    private $connectTimeoutMs;
+
     private $connected = false;
 
     public function __construct(
