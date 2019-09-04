@@ -30,13 +30,9 @@ class ConsumerBuilder extends KafkaBuilder
 
     private $numRetries = self::DEFAULT_RETRIES;
 
+    private $connectTimeoutMs = self::DEFAULT_TIMEOUT_MS;
+
     private $groupId;
-
-    /** @var int */
-    private $timeout;
-
-    /** @var int */
-    private $lifetime;
 
     public function __construct(
       array $brokers,
@@ -63,17 +59,7 @@ class ConsumerBuilder extends KafkaBuilder
         $failureProducer = $this->createFailureProducer();
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
-        $consumer = new Consumer($kafkaConsumer, $this->serializer, $this->logger, $recordProcessor);
-
-        if ($this->timeout !== null) {
-            $consumer->setTimeout($this->timeout);
-        }
-
-        if ($this->lifetime !== null) {
-            $consumer->setConsumerLifetime($this->lifetime);
-        }
-
-        return $consumer;
+        return new Consumer($kafkaConsumer, $this->serializer, $this->logger, $recordProcessor, $this->connectTimeoutMs);
     }
 
     public function buildTopicConfig(): void
@@ -98,15 +84,9 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function setTimeout(int $timeout): self
+    public function setConnectTimeoutMs(int $connectTimeoutMs): self
     {
-        $this->timeout = $timeout;
-        return $this;
-    }
-
-    public function setLifetime(int $lifetime): self
-    {
-        $this->lifetime = $lifetime;
+        $this->connectTimeoutMs = $connectTimeoutMs;
         return $this;
     }
 

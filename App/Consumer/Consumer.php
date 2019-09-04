@@ -10,6 +10,7 @@ use Psr\Log\LoggerInterface;
 use RdKafka\KafkaConsumer;
 use RdKafka\KafkaConsumerTopic;
 use RdKafka\Metadata;
+use Spatie\Async\Pool;
 use Throwable;
 
 class Consumer
@@ -30,21 +31,24 @@ class Consumer
     /** @var KafkaSerializerInterface */
     private $serializer;
 
-    protected $timeout = ConsumerBuilder::DEFAULT_TIMEOUT_MS;
+    /** @var Pool */
+    private $pool;
 
-    // The lifetime of the consumer in seconds. Leave null for infinite lifetime.
-    private $consumerLifetime;
+    private $connected = false;
 
     public function __construct(
       KafkaConsumer $kafkaClient,
       KafkaSerializerInterface $serializer,
       LoggerInterface $logger,
-      RecordProcessor $recordProcessor
+      RecordProcessor $recordProcessor,
+      int $connectTimeoutMs
     ) {
         $this->kafkaClient = $kafkaClient;
         $this->serializer = $serializer;
         $this->logger = $logger;
         $this->recordProcessor = $recordProcessor;
+        $this->pool = Pool::create();
+        $this->connectTimeoutMs = $connectTimeoutMs;
     }
 
     public function subscribe(string $record, callable $handler, ?callable $failure = null): self
@@ -65,7 +69,7 @@ class Consumer
 
         try {
             $this->kafkaClient->subscribe($topics);
-            $this->poll();
+            $this->startPolling();
         } catch (Throwable $throwable) {
             $this->logger->error($throwable->getMessage());
             throw $throwable;
@@ -79,24 +83,30 @@ class Consumer
         return $this->kafkaClient->getMetadata($all_topics, $only_topic, $timeout_ms);
     }
 
-    public function setConsumerLifetime(int $timeoutSeconds): self
+    public function disconnect(): self
     {
-        $this->consumerLifetime = $timeoutSeconds;
+        $this->connected = false;
         return $this;
     }
 
-    public function setTimeout(int $timeout): self
-    {
-        $this->timeout = $timeout;
-        return $this;
+    public function wait(): void {
+        $this->pool->wait();
+    }
+
+    private function startPolling(): void {
+        $this->pool->add(function () {
+            $this->poll();
+        })->catch(function (Throwable $exception) {
+            throw $exception;
+        });
     }
 
     private function poll(): void
     {
-        $time = time();
+        $this->connected = true;
 
-        while ($this->stillAlive($time)) {
-            $message = $this->kafkaClient->consume($this->timeout);
+        while ($this->connected) {
+            $message = $this->kafkaClient->consume($this->connectTimeout);
 
             if (!$message || !is_object($message)) {
                 continue;
@@ -117,11 +127,6 @@ class Consumer
                     break;
             }
         }
-    }
-
-    private function stillAlive(int $initialTime): bool
-    {
-        return $this->consumerLifetime === null ? true : time() - $initialTime < $this->consumerLifetime;
     }
 
     private function determineTopics($topics = []): array
