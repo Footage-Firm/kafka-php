@@ -84,7 +84,7 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function setConnectTimeoutMs(int $connectTimeoutMs): self
+    public function setConnectTimeout(int $connectTimeoutMs): self
     {
         $this->connectTimeoutMs = $connectTimeoutMs;
         return $this;
