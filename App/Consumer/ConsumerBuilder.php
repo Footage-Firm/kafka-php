@@ -26,11 +26,18 @@ class ConsumerBuilder extends KafkaBuilder
 
     public const DEFAULT_TIMEOUT_MS = 1000;
 
+    public const DEFAULT_POLL_INTERVAL_MS = 10;
+
     private $offsetReset = self::DEFAULT_OFFSET_RESET;
 
     private $numRetries = self::DEFAULT_RETRIES;
 
     private $connectTimeoutMs = self::DEFAULT_TIMEOUT_MS;
+
+    private $pollIntervalMs = self::DEFAULT_POLL_INTERVAL_MS;
+
+    /** @var null | int */
+    private $idleTimeoutMs = null;
 
     private $groupId;
 
@@ -59,7 +66,15 @@ class ConsumerBuilder extends KafkaBuilder
         $failureProducer = $this->createFailureProducer();
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
-        return new Consumer($kafkaConsumer, $this->serializer, $this->logger, $recordProcessor, $this->connectTimeoutMs);
+        return new Consumer(
+            $kafkaConsumer,
+            $this->serializer,
+            $this->logger,
+            $recordProcessor,
+            $this->idleTimeoutMs,
+            $this->connectTimeoutMs,
+            $this->pollIntervalMs
+        );
     }
 
     public function buildTopicConfig(): void
@@ -87,6 +102,12 @@ class ConsumerBuilder extends KafkaBuilder
     public function setConnectTimeout(int $connectTimeoutMs): self
     {
         $this->connectTimeoutMs = $connectTimeoutMs;
+        return $this;
+    }
+
+    public function setPollInterval(int $pollIntervalMs): self
+    {
+        $this->pollIntervalMs = $pollIntervalMs;
         return $this;
     }
 

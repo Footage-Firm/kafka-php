@@ -6,6 +6,7 @@ use App\Consumer\Exceptions\ConsumerConfigurationException;
 use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatter;
 use App\Traits\ShortClassName;
+use Carbon\Carbon;
 use Psr\Log\LoggerInterface;
 use RdKafka\KafkaConsumer;
 use RdKafka\KafkaConsumerTopic;
@@ -31,27 +32,42 @@ class Consumer
     /** @var KafkaSerializerInterface */
     private $serializer;
 
-    /** @var Pool */
-    private $pool;
-
     /** @var int */
     private $connectTimeoutMs;
 
+    /** @var int */
+    private $idleTimeoutMs;
+
+    /** @var int */
+    private $lastMessageTime;
+
+    /** @var int */
+    private $pollIntervalMs;
+
+    /** @var bool */
     private $connected = false;
+
+    /** @var Pool */
+    private $pool;
 
     public function __construct(
       KafkaConsumer $kafkaClient,
       KafkaSerializerInterface $serializer,
       LoggerInterface $logger,
       RecordProcessor $recordProcessor,
-      int $connectTimeoutMs = ConsumerBuilder::DEFAULT_TIMEOUT_MS
+      int $idleTimeoutMs = null,
+      int $connectTimeoutMs = null,
+      int $pollIntervalMs = null
     ) {
         $this->kafkaClient = $kafkaClient;
         $this->serializer = $serializer;
         $this->logger = $logger;
         $this->recordProcessor = $recordProcessor;
+        $this->idleTimeoutMs = $idleTimeoutMs;
+        $this->connectTimeoutMs = $connectTimeoutMs ?? ConsumerBuilder::DEFAULT_TIMEOUT_MS;
+        $this->pollIntervalMs = $pollIntervalMs ?? ConsumerBuilder::DEFAULT_POLL_INTERVAL_MS;
+
         $this->pool = Pool::create();
-        $this->connectTimeoutMs = $connectTimeoutMs;
     }
 
     public function subscribe(string $record, callable $handler, ?callable $failure = null): self
@@ -106,10 +122,12 @@ class Consumer
 
     private function poll(): void
     {
-        $this->connected = true;
 
-        while ($this->connected) {
-            $message = $this->kafkaClient->consume($this->connectTimeout);
+        $this->connected = true;
+        $this->lastMessageTime = Carbon::now();
+
+        while ($this->connected && $this->idleTimeRemaining()) {
+            $message = $this->kafkaClient->consume($this->connectTimeoutMs);
 
             if (!$message || !is_object($message)) {
                 continue;
@@ -120,6 +138,7 @@ class Consumer
                     $record = $this->serializer->deserialize($message->payload);
                     $this->recordProcessor->process($record);
                     $this->kafkaClient->commit($message);
+                    $this->lastMessageTime = Carbon::now();
                     break;
                 case RD_KAFKA_RESP_ERR__TIMED_OUT:
                     // NOP. If there are no new messages in the subscribed topic then a message with this error will be
@@ -129,7 +148,14 @@ class Consumer
                     $this->logger->info('Kafka message error: ' . $message->errstr());
                     break;
             }
+
+            usleep($this->pollIntervalMs * 1000);
         }
+    }
+
+    private function idleTimeRemaining(): bool {
+        $idleMs = Carbon::now()->diffInMilliseconds($this->lastMessageTime);
+        return is_numeric($this->idleTimeoutMs) ? $idleMs <= $this->idleTimeoutMs : true;
     }
 
     private function determineTopics($topics = []): array

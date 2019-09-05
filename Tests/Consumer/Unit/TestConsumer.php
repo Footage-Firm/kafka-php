@@ -4,6 +4,7 @@ namespace Test\Consumer\Unit;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
 use App\Consumer\Consumer;
+use App\Consumer\ConsumerBuilder;
 use App\Consumer\RecordHandler;
 use App\Consumer\RecordProcessor;
 use App\Serializers\KafkaSerializerInterface;
@@ -54,9 +55,10 @@ class TestConsumer extends TestCase
 
         $this->consumer = new Consumer(
           $this->mockKafkaClient,
-          $this->mockSerializer,
-          $this->mockLogger,
-          $this->mockRecordProcessor
+            $this->mockSerializer,
+            $this->mockLogger,
+            $this->mockRecordProcessor,
+            10
         );
 
     }
@@ -75,6 +77,8 @@ class TestConsumer extends TestCase
           ->with(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
+        $this->consumer->wait();
+
     }
 
     /**
@@ -85,14 +89,16 @@ class TestConsumer extends TestCase
         $this->expectNotToPerformAssertions();
 
         $this->mockKafkaClient->shouldReceive('subscribe')->once()->with($expectedTopic);
+        $this->mockKafkaClient->shouldReceive('consume')->with(ConsumerBuilder::DEFAULT_TIMEOUT_MS);
 
         $this->mockRecordProcessor->shouldReceive('subscribe');
         $this->mockRecordProcessor->shouldReceive('getHandlers')
           ->andReturn([FakeRecord::class => $this->mockMessageHandler]);
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
-        $this->consumer->setConsumerLifetime(0);
         $this->consumer->consume($originalTopic);
+        $this->consumer->wait();
+
     }
 
     public function topicDataProvider()
@@ -115,8 +121,8 @@ class TestConsumer extends TestCase
         $this->mockRecordProcessor->shouldReceive('getHandlers')->andReturn([$this->mockMessageHandler]);
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
-        $this->consumer->setConsumerLifetime(1);
         $this->consumer->consume(null);
+        $this->consumer->wait();
 
         // If the consumer lifetime didn't work we'll never reach this assertion.
         $this->assertTrue(true);
@@ -139,8 +145,8 @@ class TestConsumer extends TestCase
         $this->mockLogger->shouldNotHaveBeenCalled();
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
-        $this->consumer->setConsumerLifetime(1);
         $this->consumer->consume();
+        $this->consumer->wait();
     }
 
     public function testHandlesMessageFromKafka_TimeoutError()
@@ -159,8 +165,8 @@ class TestConsumer extends TestCase
         $this->mockLogger->shouldNotHaveBeenCalled();
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
-        $this->consumer->setConsumerLifetime(1);
         $this->consumer->consume();
+        $this->consumer->wait();
 
     }
 
@@ -200,8 +206,9 @@ class TestConsumer extends TestCase
         $this->mockLogger->shouldReceive('info')->with('Kafka message error: ' . $errStr);
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
-        $this->consumer->setConsumerLifetime(1);
         $this->consumer->consume();
+        $this->consumer->wait();
+
     }
 
     private function mockKafkaClientWithMessage($msgErr, $errStr = '', $msgPayload = '', $topic = 'fake-record')
