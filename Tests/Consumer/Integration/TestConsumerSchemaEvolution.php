@@ -54,14 +54,18 @@ class TestConsumerSchemaEvolution extends TestCase
             ->build();
 
         $records = [];
-        $consumer->subscribe(EvolvingRecord::class, function (EvolvingRecord $record) use (&$records)
+        $consumer->subscribe(EvolvingRecord::class, function (EvolvingRecord $record) use (&$records, &$consumer)
         {
             array_push($records, $record);
+
+            if (count($records) >= 10) {
+                $consumer->disconnect();
+            }
         });
 
-        $consumer
-            ->setConsumerLifetime(5)
-            ->consume($topic);
+        $consumer->consume($topic);
+
+        $consumer->wait();
 
         $this->assertCount(10, $records);
 

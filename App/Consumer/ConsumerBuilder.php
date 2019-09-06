@@ -26,17 +26,20 @@ class ConsumerBuilder extends KafkaBuilder
 
     public const DEFAULT_TIMEOUT_MS = 1000;
 
+    public const DEFAULT_POLL_INTERVAL_MS = 10;
+
     private $offsetReset = self::DEFAULT_OFFSET_RESET;
 
     private $numRetries = self::DEFAULT_RETRIES;
 
+    private $connectTimeoutMs = self::DEFAULT_TIMEOUT_MS;
+
+    private $pollIntervalMs = self::DEFAULT_POLL_INTERVAL_MS;
+
+    /** @var null | int */
+    private $idleTimeoutMs = null;
+
     private $groupId;
-
-    /** @var int */
-    private $timeout;
-
-    /** @var int */
-    private $lifetime;
 
     public function __construct(
       array $brokers,
@@ -63,17 +66,15 @@ class ConsumerBuilder extends KafkaBuilder
         $failureProducer = $this->createFailureProducer();
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
-        $consumer = new Consumer($kafkaConsumer, $this->serializer, $this->logger, $recordProcessor);
-
-        if ($this->timeout !== null) {
-            $consumer->setTimeout($this->timeout);
-        }
-
-        if ($this->lifetime !== null) {
-            $consumer->setConsumerLifetime($this->lifetime);
-        }
-
-        return $consumer;
+        return new Consumer(
+            $kafkaConsumer,
+            $this->serializer,
+            $this->logger,
+            $recordProcessor,
+            $this->idleTimeoutMs,
+            $this->connectTimeoutMs,
+            $this->pollIntervalMs
+        );
     }
 
     public function buildTopicConfig(): void
@@ -98,15 +99,15 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function setTimeout(int $timeout): self
+    public function setConnectTimeout(int $connectTimeoutMs): self
     {
-        $this->timeout = $timeout;
+        $this->connectTimeoutMs = $connectTimeoutMs;
         return $this;
     }
 
-    public function setLifetime(int $lifetime): self
+    public function setPollInterval(int $pollIntervalMs): self
     {
-        $this->lifetime = $lifetime;
+        $this->pollIntervalMs = $pollIntervalMs;
         return $this;
     }
 
