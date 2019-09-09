@@ -11,8 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
-use Tests\Fakes\FakeRecord;
 use Tests\Fakes\FakeFactory;
+use Tests\Fakes\FakeRecord;
 use Tests\WithFaker;
 
 class TestProducer extends TestCase
@@ -116,6 +116,10 @@ class TestProducer extends TestCase
         $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);
         $this->mockLogger->shouldReceive('error');
 
+        $this->mockKafkaProducer->shouldReceive('newTopic')
+          ->with('fake-record')
+          ->andReturn($this->mockTopicProducer);
+
         // Throw an error when trying to produce initially
         $this->mockTopicProducer->shouldReceive('produce')
           ->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord])
@@ -131,13 +135,9 @@ class TestProducer extends TestCase
             0,
             $this->fakeEncodedRecord,
           ]);
-
+        
         $this->mockKafkaProducer->shouldReceive('newTopic')
-          ->with('fake-record')
-          ->andReturn($this->mockTopicProducer);
-
-        $this->mockKafkaProducer->shouldReceive('newTopic')
-          ->with('fail-FakeRecord')
+          ->with('fail-fake-record')
           ->andReturn($mockTopicProducer_FailureRecord);
 
         /** @var ProducerAlias $producer */

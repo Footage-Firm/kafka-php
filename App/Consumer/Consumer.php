@@ -108,14 +108,18 @@ class Consumer
         return $this;
     }
 
-    public function wait(): void {
+    public function wait(): void
+    {
         $this->pool->wait();
     }
 
-    private function startPolling(): void {
-        $this->pool->add(function () {
+    private function startPolling(): void
+    {
+        $this->pool->add(function ()
+        {
             $this->poll();
-        })->catch(function (Throwable $exception) {
+        })->catch(function (Throwable $exception)
+        {
             throw $exception;
         });
     }
@@ -153,7 +157,8 @@ class Consumer
         }
     }
 
-    private function idleTimeRemaining(): bool {
+    private function idleTimeRemaining(): bool
+    {
         $idleMs = Carbon::now()->diffInMilliseconds($this->lastMessageTime);
         return is_numeric($this->idleTimeoutMs) ? $idleMs <= $this->idleTimeoutMs : true;
     }

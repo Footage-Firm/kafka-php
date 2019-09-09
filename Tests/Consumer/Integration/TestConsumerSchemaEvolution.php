@@ -9,7 +9,6 @@ use App\Producer\Producer;
 use App\Producer\ProducerBuilder;
 use PHPUnit\Framework\TestCase;
 use Tests\WithFaker;
-use Throwable;
 
 class TestConsumerSchemaEvolution extends TestCase
 {
@@ -38,6 +37,7 @@ class TestConsumerSchemaEvolution extends TestCase
         // Produce 5 records with EvolvingRecord schema, then update the schema by adding 'NewField' and produce 5 more records
         //
         $topic = $this->faker->word;
+        print "Using topic $topic and group id $this->groupId\n";
         $producer = (new ProducerBuilder($this->brokers, $this->schemaRegistryUrl))
           ->shouldSendToFailureTopic(false)
           ->build();
@@ -50,8 +50,8 @@ class TestConsumerSchemaEvolution extends TestCase
         // with the old schema, then the new schema, and no errors should be thrown.
         //
         $consumer = (new ConsumerBuilder($this->brokers, $this->groupId, $this->schemaRegistryUrl))
-            ->setNumRetries(0)
-            ->build();
+          ->setNumRetries(0)
+          ->build();
 
         $records = [];
         $consumer->subscribe(EvolvingRecord::class, function (EvolvingRecord $record) use (&$records, &$consumer)
@@ -75,9 +75,9 @@ class TestConsumerSchemaEvolution extends TestCase
         foreach ($records as $record) {
             if (property_exists($record, 'newField')) {
                 $consumedUpdatedRecords[] = $record;
-                $updated = array_filter($updatedRecords, function ($updated) use ($decoded)
+                $updated = array_filter($updatedRecords, function ($updated) use ($record)
                 {
-                    return $updated->id === $decoded->id;
+                    return $updated->id === $record->id;
                 });
                 $this->assertNotNull($updated);
             } else {

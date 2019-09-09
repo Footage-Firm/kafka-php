@@ -43,22 +43,14 @@ class TestConsumer extends TestCase
     {
         parent::setUp();
         $this->initFaker();
-
-        $this->mockRecordProcessor = Mockery::mock(RecordProcessor::class);
-        $this->mockLogger = Mockery::mock(LoggerInterface::class);
-        $this->mockMessageHandler = Mockery::mock(RecordHandler::class);
-        $this->mockSuccessFn = new MockeryCallableMock();
-        $this->mockFailureFn = new MockeryCallableMock();
-        $this->mockKafkaClient = Mockery::mock(KafkaConsumer::class);
-        $this->mockKafkaClient->shouldReceive('unsubscribe');
-        $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class);
+        $this->setUpmocks();
 
         $this->consumer = new Consumer(
           $this->mockKafkaClient,
-            $this->mockSerializer,
-            $this->mockLogger,
-            $this->mockRecordProcessor,
-            10
+          $this->mockSerializer,
+          $this->mockLogger,
+          $this->mockRecordProcessor,
+          10
         );
 
     }
@@ -223,5 +215,17 @@ class TestConsumer extends TestCase
 
         $this->mockKafkaClient->shouldReceive('consume')->andReturn($mockMessage);
         $this->mockKafkaClient->shouldReceive('subscribe')->with([$topic]);
+    }
+
+    private function setUpmocks()
+    {
+        $this->mockRecordProcessor = Mockery::mock(RecordProcessor::class)->shouldIgnoreMissing();
+        $this->mockLogger = Mockery::mock(LoggerInterface::class)->shouldIgnoreMissing();
+        $this->mockMessageHandler = Mockery::mock(RecordHandler::class)->shouldIgnoreMissing();
+        $this->mockSuccessFn = new MockeryCallableMock();
+        $this->mockFailureFn = new MockeryCallableMock();
+        $this->mockKafkaClient = Mockery::mock(KafkaConsumer::class)->shouldIgnoreMissing();
+        $this->mockKafkaClient->shouldReceive('unsubscribe');
+        $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class)->shouldIgnoreMissing();
     }
 }
