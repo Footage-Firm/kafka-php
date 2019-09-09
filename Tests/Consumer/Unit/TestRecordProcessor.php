@@ -67,17 +67,10 @@ class TestRecordProcessor extends TestCase
         $this->initRecordProcessor();
     }
 
-    //    private function initMockSchemaRegistry(): void
-    //    {
-    //        $this->mockRegistry = Mockery::mock(Registry::class);
-    //        $this->fakeSchemaId = $this->faker->randomNumber(1);
-    //        $this->mockMessage->payload = valueOf(encode(1, $this->fakeSchemaId, json_encode($this->fakeRecord)));
-    //        $this->mockMessage->err = RD_KAFKA_RESP_ERR_NO_ERROR;
-    //        $this->mockRegistry
-    //          ->shouldReceive('schemaId')
-    //          ->with('fake-record-value', Mockery::type(AvroSchema::class))
-    //          ->andReturn($this->fakeSchemaId);
-    //    }
+    protected function tearDown(): void
+    {
+        Mockery::close();
+    }
 
     private function initRecordProcessor(): void
     {
@@ -108,9 +101,10 @@ class TestRecordProcessor extends TestCase
 
         $this->recordProcessor->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
         $this->recordProcessor->subscribe(FakeRecordTwo::class, $mockSuccessFnTwo, $mockFailureFnTwo);
+        $this->mockSuccessFn->shouldBeCalled()->once();
+
         $this->recordProcessor->process($this->fakeDecodedArray);
 
-        $this->mockSuccessFn->shouldBeCalled()->once();
         $this->mockFailureFn->shouldNotHaveBeenCalled();
         $mockSuccessFnTwo->shouldNotHaveBeenCalled();
         $mockFailureFnTwo->shouldNotHaveBeenCalled();
@@ -147,16 +141,16 @@ class TestRecordProcessor extends TestCase
         $numRetries = $this->faker->randomNumber(1);
         $topic = sprintf('%s%s-%s', TopicFormatter::FAILURE_TOPIC_PREFIX, $this->fakeGroupId, 'fake-record');
         $this->mockFailureProducer->shouldReceive('produce')
-          ->times($numRetries + 1)
+          ->once()
           ->with(
             IsEqual::equalTo($this->fakeRecord),
             $topic
           );
 
         $this->initRecordProcessor();
-        $this->recordProcessor->setNumRetries($numRetries);
-
         $this->mockSuccessFn->shouldBeCalled()->times($numRetries + 1)->andThrow(Exception::class);
+
+        $this->recordProcessor->setNumRetries($numRetries);
 
         $this->recordProcessor->setNumRetries($numRetries);
         $this->recordProcessor->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);

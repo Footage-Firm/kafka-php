@@ -6,8 +6,10 @@ use App\Common\TopicFormatter;
 use Tests\Fakes\FakeRecord;
 use Tests\WithFaker;
 
-class TestTopicFormatter extends WithFaker
+class TestTopicFormatter
 {
+
+    use WithFaker;
 
     public function testTopicFromRecord()
     {

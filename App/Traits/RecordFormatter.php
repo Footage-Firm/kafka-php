@@ -5,8 +5,6 @@ namespace App\Traits;
 trait RecordFormatter
 {
 
-    public static $SUBJECT_SUFFIX = '-value';
-    
     protected function kebabCase(string $value): string
     {
         if (!ctype_lower($value)) {
@@ -17,10 +15,5 @@ trait RecordFormatter
         }
 
         return $value;
-    }
-
-    protected function formatAsSubject(string $value): string
-    {
-        return $this->kebabCase($value) . static::$SUBJECT_SUFFIX;
     }
 }

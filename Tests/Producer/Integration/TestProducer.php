@@ -3,7 +3,7 @@
 namespace Test\Producer\Integration;
 
 use App\Producer\ProducerBuilder;
-use AvroSchemaParseException;
+use Exception;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\Fakes\FakeFactory;
@@ -27,7 +27,7 @@ class TestProducer extends TestCase
 
     public function testExceptionThrown_WhenFailsToEncode()
     {
-        $this->expectException(AvroSchemaParseException::class);
+        $this->expectException(Exception::class);
         $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl);
         $producer = $builder->build();
         $record = new FakeRecord();

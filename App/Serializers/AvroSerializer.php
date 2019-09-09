@@ -38,14 +38,13 @@ class AvroSerializer implements KafkaSerializerInterface
     {
         $schema = AvroSchema::parse($record->schema());
         $data = $record->data();
-        $name = str_replace('_', '-', $this->kebabCase($record->name()));
+        $name = $this->kebabCase($record->name());
 
         return $this->serializer->encodeRecord($name . '-value', $schema, $data);
     }
 
     public function deserialize(string $payload): array
     {
-
         $schemaName = $this->nameFromEncodedPayload($payload);
         try {
             $decoded = $this->serializer->decodeMessage($payload);

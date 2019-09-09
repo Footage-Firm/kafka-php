@@ -6,7 +6,6 @@ use App\Common\KafkaBuilder;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\Producer as KafkaProducer;
-use RdKafka\TopicConf;
 
 class ProducerBuilder extends KafkaBuilder
 {
@@ -51,11 +50,5 @@ class ProducerBuilder extends KafkaBuilder
     {
         $this->config->set('retries', self::DEFAULT_RETRIES);
         return $this;
-    }
-
-
-    protected function defaultTopicConfig(): TopicConf
-    {
-        return new TopicConf();
     }
 }

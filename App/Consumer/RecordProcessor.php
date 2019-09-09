@@ -47,7 +47,6 @@ class RecordProcessor
         $key = key($decoded);
         $handler = $this->handlers[$key] ?? null;
 
-
         if ($handler) {
             $record = $this->getRecordFromDecoded($decoded[$key], $handler);
             try {
@@ -58,6 +57,10 @@ class RecordProcessor
         }
     }
 
+    /*
+     * Returns an array of handlers with key of the short class name of the subscribed object, and value
+     * of a MessageHandler
+     */
     public function getHandlers(): array
     {
         return $this->handlers;
@@ -98,7 +101,6 @@ class RecordProcessor
         }
     }
 
-
     private function sendToFailureTopic(BaseRecord $record): void
     {
         $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
@@ -112,6 +114,5 @@ class RecordProcessor
         $record = new $recordType();
         $record->decode($decodedValue);
         return $record;
-
     }
 }

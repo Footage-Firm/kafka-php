@@ -14,12 +14,7 @@ class RecordHandler
 
     /** @var callable|null */
     private $failure;
-
-    /** @var int */
-    public $schemaId;
-
-    public $subject;
-
+    
     public function __construct(
       string $recordType,
       callable $handler,
