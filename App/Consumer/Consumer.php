@@ -97,9 +97,13 @@ class Consumer
         }
     }
 
-    public function getMetadata(bool $all_topics, ?KafkaConsumerTopic $only_topic, int $timeout_ms): Metadata
-    {
-        return $this->kafkaClient->getMetadata($all_topics, $only_topic, $timeout_ms);
+    public function getMetadata(
+      bool $allTopics = true,
+      KafkaConsumerTopic $onlyTopic = null,
+      int $timeout_ms = 1000
+    ): Metadata {
+        $onlyTopic = $onlyTopic ?? new KafkaConsumerTopic();
+        return $this->kafkaClient->getMetadata($allTopics, $onlyTopic, $timeout_ms);
     }
 
     public function disconnect(): self
