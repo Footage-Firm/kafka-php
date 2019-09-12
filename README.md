@@ -106,7 +106,7 @@ As mentioned above, Kafka organized records into topics similar to how a relatio
 By default, the topic name is the kebab-case class name of the record being produced. This can be changed by sending
 an optional second parameter to the `produce` method.
 
-```typescript
+```php
 // This will produce to the topic 'duck'
 $producer->produce(new Duck());
 
@@ -132,4 +132,91 @@ Kafka also guarantees that a topic will tolerate N-1 server failures if the topi
 
 #### Examples
 
-See `/App/examples/producerExample.php` for a working example with comments.
+See `/App/Examples/ProducerExample.php` for a working example with comments.
+
+### Consuming
+
+Consumers read records from Kafka. Again, just using the default config options is a good way to start.
+
+Each consumer has a settable group id. Multiple consumers with the same group id can work together to read from a topic
+concurrently. Each consumer in a group will automatically be assigned to one or more partitions of a topic. If more consumers are
+in a group than there are partitions for a topic, then the unused consumers will sit idle.
+
+Create consumers using the `ConsumerBuilder` class.
+
+```php
+$consumer = (new ConsumerBuilder(['brokers.go.here:123'], 'doc-group', 'http://schemaRegitry.url'))->build();
+```
+
+#### Topics & Subscriptions
+
+Consumers have a `subscribe` method that take a record class name and a callback. Once the consumer has subscribed to the record,
+the `consume()` method is called to start the actual consumption. By default, the consumer will
+consume from topics that correspond to the kebab-case name of the type of records it is subscribed to. Here is an
+example for clarity:
+
+```php
+$consumer = (new ConsumerBuilder(['brokers.go.here:123'], 'doc-group', 'http://schemaRegitry.url'))->build();
+
+$consumer->subscribe(Duck::class, function (Duck $duck) { var_dump($duck); });
+$consumer->subscribe(CanadaGoose::class, function (CanadaGoose $goose) { var_dump($goose); });
+
+// This will subscribe to topics 'duck' and 'canada-goose'
+$consumer->consume();
+
+// If you want to consume to different topics then send an array of strings to consume
+$consumer->consume(['this-topic', 'that-topic', 'my-topic']);
+```
+
+#### Failures & Retries
+
+Imagine you consume 100 records from Kafka and save them to a database. When trying to save the 50th records there is an
+intermittent database failure and your call to `$someDao->save()` throws an error. To keep track of that failure
+the records is written to a failure topic with the format `fail-groupId-the-record-class-name`. Unlike producers which use
+a special `FailedRecord` record, records that cause en error when being consumed will be put onthe topic using their original schemas.
+
+```php
+$consumer = (new ConsumerBuilder(['brokers.go.here:123'], 'group123', 'http://schemaRegitry.url'))->build();
+$consumer->subscribe(Duck::class, function (Duck $record) use ($dao) {
+    $dao->save($record); // Assume this throws an error
+});
+$consumer->consume();
+
+// This records will be written to a topic called fail-group123-duck.
+```
+
+#### Read from beginning vs end
+
+It is possible to specify if a consumer consumes from the beginning of a topic or if it only consumes records produced
+after it has connected to Kafka. This is on a per topic, per consumer group basis.
+
+Example:
+Imagine you have a topic with 100 records. Then you create two consumers.
+
+Consumer 1
+
+-   In consumer group 'one'
+-   Uses the default of consuming a topic from the beginning
+
+Consumer 2
+
+-   In consumer group 'two'
+-   Consumes a topic from the end.
+
+Both consumers start consuming your topic. Consumer 1 will consume 100 records, consumer 2 will consume 0 records. If
+both consumers stay connected to Kafka and 10 new records come in then both will consume those new records. Suppose
+instead that you disconnect both consumers before the 10 new records arrive. You wait a while and start to consume
+from Kafka again. Consumer 1 will read records with offsets 100 - 110. Consumer 2 will still read nothing. It doesn't
+remember that the 'old end' was at offset 100, it just goes to the current end of offset 110.
+
+Currently the only options are to consumer from the beginning or end. It is possible to start consuming from any offset,
+but that feature will not be added to this library for the time being.
+
+#### Examples
+
+See `/App/Examples/ConsumeExample.php` for a working example with comments.
+
+### Useful Documentation
+
+-   [rdkafka configuration options](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
+-   [php-rdkafka repo](https://github.com/arnaud-lb/php-rdkafka)
