@@ -60,14 +60,16 @@ abstract class KafkaBuilder
         $this->config->set(ConfigOptions::BROKER_LIST, implode(',', $brokers));
     }
 
-    public function setSslData(string $caPath, string $certPath, string $keyPath): void
+    public function setSslData(string $caPath, string $certPath, string $keyPath): self
     {
         $this->config->set(ConfigOptions::SECURITY_PROTOCOL, 'ssl');
         $this->config->set(ConfigOptions::CA_PATH, $caPath);
         $this->config->set(ConfigOptions::CERT_PATH, $certPath);
         $this->config->set(ConfigOptions::KEY_PATH, $keyPath);
+
+        return $this;
     }
-    
+
     //The callback has a signature of function (Rdkafka\Producer $kafka, int $err, string $reason);
     public function setKafkaErrorCallback(callable $callback): self
     {

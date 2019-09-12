@@ -67,13 +67,13 @@ class ConsumerBuilder extends KafkaBuilder
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
         return new Consumer(
-            $kafkaConsumer,
-            $this->serializer,
-            $this->logger,
-            $recordProcessor,
-            $this->idleTimeoutMs,
-            $this->connectTimeoutMs,
-            $this->pollIntervalMs
+          $kafkaConsumer,
+          $this->serializer,
+          $this->logger,
+          $recordProcessor,
+          $this->idleTimeoutMs,
+          $this->connectTimeoutMs,
+          $this->pollIntervalMs
         );
     }
 
@@ -173,5 +173,11 @@ class ConsumerBuilder extends KafkaBuilder
         ];
         return !array_diff_key(array_flip($necessaryKeys), $configDump)
           && $config[ConfigOptions::SECURITY_PROTOCOL] = ConfigOptions::SSL;
+    }
+
+    public function setIdleTimeoutMs(int $idleTimeoutMs): ConsumerBuilder
+    {
+        $this->idleTimeoutMs = $idleTimeoutMs;
+        return $this;
     }
 }
