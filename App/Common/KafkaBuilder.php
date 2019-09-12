@@ -67,7 +67,8 @@ abstract class KafkaBuilder
         $this->config->set(ConfigOptions::CERT_PATH, $certPath);
         $this->config->set(ConfigOptions::KEY_PATH, $keyPath);
     }
-
+    
+    //The callback has a signature of function (Rdkafka\Producer $kafka, int $err, string $reason);
     public function setKafkaErrorCallback(callable $callback): self
     {
         $this->config->setErrorCb($callback);
