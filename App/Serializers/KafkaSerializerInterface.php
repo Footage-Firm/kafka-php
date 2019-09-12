@@ -2,7 +2,7 @@
 
 namespace App\Serializers;
 
-use App\Events\BaseRecord;
+use EventsPhp\BaseRecord;
 
 interface KafkaSerializerInterface
 {

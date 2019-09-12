@@ -2,8 +2,8 @@
 
 namespace App\Records\Failure;
 
-use App\Events\BaseRecord;
 use App\Events\Poc\Common\SharedMeta;
+use EventsPhp\BaseRecord;
 
 class Failure extends BaseRecord
 {

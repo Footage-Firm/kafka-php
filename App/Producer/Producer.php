@@ -4,9 +4,9 @@ namespace App\Producer;
 
 use App\Common\KafkaListener;
 use App\Common\TopicFormatter;
-use App\Events\BaseRecord;
 use App\Records\Failure\Failure;
 use App\Serializers\KafkaSerializerInterface;
+use EventsPhp\BaseRecord;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use Throwable;

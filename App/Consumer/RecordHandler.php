@@ -2,7 +2,7 @@
 
 namespace App\Consumer;
 
-use App\Events\BaseRecord;
+use EventsPhp\BaseRecord;
 
 class RecordHandler
 {
@@ -14,7 +14,7 @@ class RecordHandler
 
     /** @var callable|null */
     private $failure;
-    
+
     public function __construct(
       string $recordType,
       callable $handler,

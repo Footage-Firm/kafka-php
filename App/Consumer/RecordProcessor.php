@@ -3,10 +3,10 @@
 namespace App\Consumer;
 
 use App\Common\TopicFormatter;
-use App\Events\BaseRecord;
 use App\Producer\Producer;
 use App\Traits\RecordFormatter;
 use App\Traits\ShortClassName;
+use EventsPhp\BaseRecord;
 use Throwable;
 
 class RecordProcessor

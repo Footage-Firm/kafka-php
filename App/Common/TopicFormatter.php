@@ -2,8 +2,8 @@
 
 namespace App\Common;
 
-use App\Events\BaseRecord;
 use App\Traits\ShortClassName;
+use EventsPhp\BaseRecord;
 
 class TopicFormatter
 {

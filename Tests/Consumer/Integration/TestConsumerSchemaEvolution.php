@@ -1,12 +1,12 @@
 <?php
 
 
-namespace Test\Consumer\Integration;
+namespace Tests\Consumer\Integration;
 
 use App\Consumer\ConsumerBuilder;
-use App\Events\BaseRecord;
 use App\Producer\Producer;
 use App\Producer\ProducerBuilder;
+use EventsPhp\BaseRecord;
 use PHPUnit\Framework\TestCase;
 use Tests\WithFaker;
 
