@@ -12,7 +12,7 @@ An opinionated Kafka producer & consumer library for PHP.
  > This documentation refers to our Producers & Consumers, not necessarily Kafka Producers and Consumers in general.
  
  This project provides a convenient way to Producer and Consume Avro-encoded records for Kafka. It uses Confluent's
- schema registry and (php-rdkafka)[https://github.com/arnaud-lb/php-rdkafka]. 
+ schema registry and [php-rdkafka](https://github.com/arnaud-lb/php-rdkafka). 
  
 
 ### Core Kafka Concepts
@@ -48,7 +48,6 @@ Producers emit messages to kafka. These messages are an avro-encoded record of w
 The Producers only understand data that is in the form of a class that extends `BaseRecord`.
 
 ```php
-<?php
 use EventsPhp\BaseRecord;
 use App\Producer\ProducerBuilder;
 
@@ -92,11 +91,11 @@ $producer->produce(new Duck());
 The `produce` function doesn't return anything. To get information about the produced record, add a delivery report callback.
 
 ```php
-    $builder = (new ProducerBuilder($brokers, $schemaRegistryUrl))
-        ->setDeliveryReportCallback(function (RdKafka\RdKafka $kafka, Message $message)
-            {
-                print "The offset of the produced message is " . $message->offset . PHP_EOL;
-            });
+$builder = new ProducerBuilder($brokers, $schemaRegistryUrl);
+$builder->setDeliveryReportCallback(function (RdKafka\RdKafka $kafka, Message $message)
+    {
+        print "The offset of the produced message is " . $message->offset . PHP_EOL;
+    });
 ```
 
 
@@ -107,6 +106,7 @@ By default, the topic name is the kebab-case class name of the record being prod
 an optional second parameter to the `produce` method.
 
 ```php
+
 // This will produce to the topic 'duck'
 $producer->produce(new Duck());
 
@@ -116,8 +116,8 @@ $producer->produce(new Duck(), 'pond-population');
 
 #### Failures
 
-If there is an error when trying to produce a record, the data is captured in a `Failure` record and written to a
-special failure topic: `fail-kebab-case-record-name`. Writing to the failure topic can be disabled, and the number of
+If there is an error when trying to produce a record, the data is captured in a record (aptly named `FailureRecord`) and 
+written to a special topic: `fail-kebab-case-record-name`. Writing to the failure topic can be disabled, and the number of
 retries is also configurable.
 
 #### Guarantees
@@ -152,8 +152,8 @@ $consumer = (new ConsumerBuilder(['brokers.go.here:123'], 'doc-group', 'http://s
 
 Consumers have a `subscribe` method that take a record class name and a callback. Once the consumer has subscribed to the record,
 the `consume()` method is called to start the actual consumption. By default, the consumer will
-consume from topics that correspond to the kebab-case name of the type of records it is subscribed to. Here is an
-example for clarity:
+consume from topics that correspond to the kebab-case name of the type of records it has subscribed to. Here is an
+example:
 
 ```php
 $consumer = (new ConsumerBuilder(['brokers.go.here:123'], 'doc-group', 'http://schemaRegitry.url'))->build();
@@ -181,6 +181,7 @@ $consumer->subscribe(Duck::class, function (Duck $record) use ($dao) {
     $dao->save($record); // Assume this throws an error
 });
 $consumer->consume();
+$consumer->wait();
 
 // This records will be written to a topic called fail-group123-duck.
 ```
@@ -220,3 +221,4 @@ See `/App/Examples/ConsumeExample.php` for a working example with comments.
 
 -   [rdkafka configuration options](https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md)
 -   [php-rdkafka repo](https://github.com/arnaud-lb/php-rdkafka)
+-   [async](https://github.com/spatie/async) - The library used to spawn parallel processes.
