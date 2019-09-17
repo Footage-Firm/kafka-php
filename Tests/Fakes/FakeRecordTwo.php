@@ -2,7 +2,7 @@
 
 namespace Tests\Fakes;
 
-use App\Events\BaseRecord;
+use EventsPhp\BaseRecord;
 
 class FakeRecordTwo extends BaseRecord
 {

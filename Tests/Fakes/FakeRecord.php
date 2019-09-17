@@ -2,14 +2,12 @@
 
 namespace Tests\Fakes;
 
-use App\Events\BaseRecord;
+use EventsPhp\BaseRecord;
 
 class FakeRecord extends BaseRecord
 {
 
     private $id;
-
-    private $name;
 
     private $version = 1;
 
@@ -24,12 +22,6 @@ class FakeRecord extends BaseRecord
         return $this->id;
     }
 
-    public function setName(string $name): FakeRecord
-    {
-        $this->name = $name;
-        return $this;
-    }
-
     public function schema(): string
     {
         return <<<SCHEMA
@@ -39,7 +31,6 @@ class FakeRecord extends BaseRecord
     "namespace": "testing",
     "fields": [
       { "name": "version", "type": "int", "default": 1},
-      { "name": "name", "type": "string" },
       { "name": "id", "type": "int" }
     ]
   }
@@ -50,7 +41,6 @@ SCHEMA;
     {
         return [
           'id' => $this->encode($this->id),
-          'name' => $this->encode($this->name),
           'version' => $this->encode($this->version),
         ];
     }

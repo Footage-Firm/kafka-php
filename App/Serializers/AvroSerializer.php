@@ -2,9 +2,9 @@
 
 namespace App\Serializers;
 
-use App\Events\BaseRecord;
 use App\Traits\RecordFormatter;
 use AvroSchema;
+use EventsPhp\BaseRecord;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
 use FlixTech\AvroSerializer\Objects\RecordSerializer;
 use FlixTech\SchemaRegistryApi\Registry;
