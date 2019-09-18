@@ -7,6 +7,7 @@ use App\Producer\Producer;
 use App\Traits\RecordFormatter;
 use App\Traits\ShortClassName;
 use EventsPhp\BaseRecord;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 class RecordProcessor
@@ -24,12 +25,16 @@ class RecordProcessor
 
     private $failureProducer;
 
+    /** @var LoggerInterface */
+    private $logger;
+
     private $numRetries = ConsumerBuilder::DEFAULT_RETRIES;
 
-    public function __construct(string $groupId, Producer $failureProducer)
+    public function __construct(string $groupId, Producer $failureProducer, LoggerInterface $logger)
     {
         $this->groupId = $groupId;
         $this->failureProducer = $failureProducer;
+        $this->logger = $logger;
     }
 
     public function subscribe(string $recordName, callable $success, callable $failure = null): void
@@ -49,9 +54,11 @@ class RecordProcessor
 
         if ($handler) {
             $record = $this->getRecordFromDecoded($decoded[$key], $handler);
+            $this->logger->debug('Handling record.', ['record' => json_encode($record)]);
             try {
                 $handler->success($record);
             } catch (Throwable $t) {
+                $this->logger->error('Exception thrown in handler.', ['error' => $t, 'record' => json_encode($record)]);
                 $this->retry($record, $handler);
             }
         }
@@ -90,6 +97,7 @@ class RecordProcessor
 
     private function retry(BaseRecord $record, RecordHandler $handler, int $currentTry = 0): void
     {
+        $this->logger->debug('Retrying record.', ['record' => json_encode($record), 'currentTry' => $currentTry]);
         if ($currentTry >= $this->numRetries) {
             $this->handleFailure($record, $handler);
         } else {
@@ -104,6 +112,7 @@ class RecordProcessor
     private function sendToFailureTopic(BaseRecord $record): void
     {
         $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
+        $this->logger->warning('Sending record to failure topic.', ['record' => $record, 'topic' => $topic]);
         $this->failureProducer->produce($record, $topic);
     }
 

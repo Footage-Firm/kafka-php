@@ -143,6 +143,7 @@ class Consumer
 
             switch ($message->err) {
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
+                    $this->logger->debug('Processing message.', ['offset' => $message->offset]);
                     $record = $this->serializer->deserialize($message->payload);
                     $this->recordProcessor->process($record);
                     $this->kafkaClient->commit($message);

@@ -15,8 +15,7 @@ class Logger extends AbstractLogger
     public function __construct()
     {
         $this->monoLogger = new MonoLogger('defaultLogger');
-        $this->monoLogger->pushHandler(new StreamHandler(__DIR__ . '/app.log', MonoLogger::DEBUG));
-
+        $this->monoLogger->pushHandler(new StreamHandler('php://stdout', MonoLogger::DEBUG));
     }
 
 

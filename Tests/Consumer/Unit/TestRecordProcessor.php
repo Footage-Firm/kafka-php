@@ -5,6 +5,7 @@ namespace Test\Consumer\Unit;
 use Akamon\MockeryCallableMock\MockeryCallableMock;
 use App\Common\TopicFormatter;
 use App\Consumer\RecordProcessor;
+use App\Logger\Logger;
 use App\Producer\Producer;
 use App\Serializers\KafkaSerializerInterface;
 use App\Traits\RecordFormatter;
@@ -29,6 +30,7 @@ class TestRecordProcessor extends TestCase
     /** @var \Mockery\Mock|KafkaSerializerInterface */
     private $mockSerializer;
 
+    /** @var Producer|Mockery\Mock */
     private $mockFailureProducer;
 
     private $fakeGroupId;
@@ -50,10 +52,7 @@ class TestRecordProcessor extends TestCase
 
     public function setUp(): void
     {
-        parent::setUp();
-
         $this->initFaker();
-
 
         $this->fakeRecord = FakeFactory::fakeRecord();
         $this->fakeDecodedArray = [
@@ -76,7 +75,8 @@ class TestRecordProcessor extends TestCase
     {
         $this->recordProcessor = new RecordProcessor(
           $this->fakeGroupId,
-          $this->mockFailureProducer
+          $this->mockFailureProducer,
+          new Logger()
         );
     }
 
