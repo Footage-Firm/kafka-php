@@ -1,4 +1,4 @@
-# php-kafka
+# kafka-php
 
 An opinionated Kafka producer & consumer library for PHP.
 
