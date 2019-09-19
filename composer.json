@@ -1,5 +1,5 @@
 {
-  "name": "balexander/php-kafka",
+  "name": "Footage-Firm/kafka-php",
   "description": "Kafka PHP produce and consumer.",
   "minimum-stability": "dev",
   "prefer-stable": true,
