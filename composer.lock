@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c17caf285ae87caa6e20360cc4d5426d",
+    "content-hash": "93999e5400996e9bbf72c47b1d9862e4",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -508,7 +508,7 @@
         },
         {
             "name": "kwn/php-rdkafka-stubs",
-            "version": "dev-master",
+            "version": "1.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kwn/php-rdkafka-stubs.git",
@@ -3012,7 +3012,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "kwn/php-rdkafka-stubs": 20,
         "storyblocks/events-php": 20,
         "mockery/mockery": 20
     },
