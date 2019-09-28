@@ -1,7 +1,6 @@
 {
   "name": "storyblocks/kafka-php",
   "description": "Kafka PHP produce and consumer.",
-  "minimum-stability": "dev",
   "prefer-stable": true,
   "authors": [
     {
@@ -28,7 +27,7 @@
     "tmarsteel/mockery-callable-mock": "^2.1",
     "spatie/async": "^1.0",
     "nesbot/carbon": "^2.24",
-    "storyblocks/events-php": "dev-master"
+    "storyblocks/events-php": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^8",
