@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "93999e5400996e9bbf72c47b1d9862e4",
+    "content-hash": "4faf69d5a58bf2bf879b0229d8b90ce6",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -987,16 +987,16 @@
         },
         {
             "name": "storyblocks/events-php",
-            "version": "dev-master",
+            "version": "13",
             "source": {
                 "type": "git",
                 "url": "git@github.com:Footage-Firm/events-php.git",
-                "reference": "6b4ccc966b2f2f20564b2292290396251a60d0c6"
+                "reference": "35accb44dfaaf618cefc3e311ad43eeea988931e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Footage-Firm/events-php/zipball/6b4ccc966b2f2f20564b2292290396251a60d0c6",
-                "reference": "6b4ccc966b2f2f20564b2292290396251a60d0c6",
+                "url": "https://api.github.com/repos/Footage-Firm/events-php/zipball/35accb44dfaaf618cefc3e311ad43eeea988931e",
+                "reference": "35accb44dfaaf618cefc3e311ad43eeea988931e",
                 "shasum": ""
             },
             "require": {
@@ -1015,10 +1015,10 @@
             ],
             "description": "Storyblocks events library for PHP.",
             "support": {
-                "source": "https://github.com/Footage-Firm/events-php/tree/12",
+                "source": "https://github.com/Footage-Firm/events-php/tree/13",
                 "issues": "https://github.com/Footage-Firm/events-php/issues"
             },
-            "time": "2019-09-18T15:18:32+00:00"
+            "time": "2019-09-28T02:41:26+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
@@ -1488,12 +1488,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/mockery/mockery.git",
-                "reference": "d8059bee60225b0b339e14f73b7d2ca50cfb0132"
+                "reference": "9a4309335fd290ea2d580ab76f5ada7f3bb290c0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mockery/mockery/zipball/d8059bee60225b0b339e14f73b7d2ca50cfb0132",
-                "reference": "d8059bee60225b0b339e14f73b7d2ca50cfb0132",
+                "url": "https://api.github.com/repos/mockery/mockery/zipball/9a4309335fd290ea2d580ab76f5ada7f3bb290c0",
+                "reference": "9a4309335fd290ea2d580ab76f5ada7f3bb290c0",
                 "shasum": ""
             },
             "require": {
@@ -1545,7 +1545,7 @@
                 "test double",
                 "testing"
             ],
-            "time": "2019-09-02T11:57:47+00:00"
+            "time": "2019-09-27T20:03:24+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -3010,9 +3010,8 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "stability-flags": {
-        "storyblocks/events-php": 20,
         "mockery/mockery": 20
     },
     "prefer-stable": true,

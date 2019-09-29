@@ -2,7 +2,7 @@
 
 namespace Tests\Common;
 
-use App\Common\TopicFormatter;
+use KafkaPhp\Common\TopicFormatter;
 use Tests\Fakes\FakeRecord;
 use Tests\WithFaker;
 

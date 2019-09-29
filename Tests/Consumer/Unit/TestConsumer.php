@@ -3,11 +3,11 @@
 namespace Test\Consumer\Unit;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
-use App\Consumer\Consumer;
-use App\Consumer\ConsumerBuilder;
-use App\Consumer\RecordHandler;
-use App\Consumer\RecordProcessor;
-use App\Serializers\KafkaSerializerInterface;
+use KafkaPhp\Consumer\Consumer;
+use KafkaPhp\Consumer\ConsumerBuilder;
+use KafkaPhp\Consumer\RecordHandler;
+use KafkaPhp\Consumer\RecordProcessor;
+use KafkaPhp\Serializers\KafkaSerializerInterface;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;

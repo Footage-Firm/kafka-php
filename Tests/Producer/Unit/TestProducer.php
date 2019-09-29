@@ -2,9 +2,9 @@
 
 namespace Tests\Producer\Unit;
 
-use App\Producer\Producer;
-use App\Producer\Producer as ProducerAlias;
-use App\Serializers\KafkaSerializerInterface;
+use KafkaPhp\Producer\Producer;
+use KafkaPhp\Producer\Producer as ProducerAlias;
+use KafkaPhp\Serializers\KafkaSerializerInterface;
 use Error;
 use Mockery;
 use PHPUnit\Framework\TestCase;

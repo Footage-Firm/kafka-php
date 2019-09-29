@@ -3,13 +3,13 @@
 namespace Test\Consumer\Unit;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
-use App\Common\TopicFormatter;
-use App\Consumer\RecordProcessor;
-use App\Logger\Logger;
-use App\Producer\Producer;
-use App\Serializers\KafkaSerializerInterface;
-use App\Traits\RecordFormatter;
-use App\Traits\ShortClassName;
+use KafkaPhp\Common\TopicFormatter;
+use KafkaPhp\Consumer\RecordProcessor;
+use KafkaPhp\Logger\Logger;
+use KafkaPhp\Producer\Producer;
+use KafkaPhp\Serializers\KafkaSerializerInterface;
+use KafkaPhp\Traits\RecordFormatter;
+use KafkaPhp\Traits\ShortClassName;
 use Exception;
 use Hamcrest\Core\IsEqual;
 use Mockery;
@@ -87,7 +87,7 @@ class TestRecordProcessor extends TestCase
         $handlers = $this->recordProcessor->getHandlers();
         self::assertCount(1, $handlers);
 
-        /** @var \App\Consumer\RecordHandler $handler */
+        /** @var \KafkaPhp\Consumer\RecordHandler $handler */
         $handler = array_pop($handlers);
         self::assertSame(FakeRecord::class, $handler->getRecordType());
     }

@@ -2,7 +2,7 @@
 
 namespace Test\Producer\Integration;
 
-use App\Producer\ProducerBuilder;
+use KafkaPhp\Producer\ProducerBuilder;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;

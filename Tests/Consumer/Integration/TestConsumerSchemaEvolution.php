@@ -3,9 +3,9 @@
 
 namespace Tests\Consumer\Integration;
 
-use App\Consumer\ConsumerBuilder;
-use App\Producer\Producer;
-use App\Producer\ProducerBuilder;
+use KafkaPhp\Consumer\ConsumerBuilder;
+use KafkaPhp\Producer\Producer;
+use KafkaPhp\Producer\ProducerBuilder;
 use EventsPhp\BaseRecord;
 use PHPUnit\Framework\TestCase;
 use Tests\WithFaker;
