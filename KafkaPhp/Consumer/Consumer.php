@@ -67,6 +67,8 @@ class Consumer
         $this->connectTimeoutMs = $connectTimeoutMs ?? ConsumerBuilder::DEFAULT_TIMEOUT_MS;
         $this->pollIntervalMs = $pollIntervalMs ?? ConsumerBuilder::DEFAULT_POLL_INTERVAL_MS;
 
+        //TODO: We were misusing async by not using Tasks to bootstrap each sub-task. Refactor to support this... for now just force sync.
+        Pool::$forceSynchronous = true;
         $this->pool = Pool::create();
     }
 
