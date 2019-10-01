@@ -41,7 +41,7 @@ jobs:
           name: Wait for schema registry.
           command: |
             printf "Waiting for schema registry"
-            until curl -s 0.0.0.0:8081; do printf "."; sleep 1; done
+            until curl -s 0.0.0.0:8081 > /dev/null; do printf "."; sleep 1; done
 
       - run: vendor/bin/phpunit --log-junit test-reports/junit.xml
 
