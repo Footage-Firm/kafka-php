@@ -39,6 +39,7 @@ class TestConsumerFailure extends TestCase
 
     public function testConsumerWritesToFailureTopic(): void
     {
+        $this->expectNotToPerformAssertions();
 
         $consumer = $this->consumer();
         $producer = $this->producer();
