@@ -28,6 +28,8 @@ jobs:
             - vendor-v1-{{ checksum "composer.lock" }}
             - vendor-v1-
 
+      - run: composer config -g github-oauth.github.com $GIT_ACCESS_TOKEN
+
       - run: composer install
 
       - save_cache:
