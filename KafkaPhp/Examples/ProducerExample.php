@@ -11,9 +11,9 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 class ProducerExample
 {
 
-    private $schemaRegistryUrl = 'http://localhost:8081';
+    private $schemaRegistryUrl = 'http://0.0.0.0:8081';
 
-    private $brokers = ['localhost:29092'];
+    private $brokers = ['0.0.0.0:29092'];
 
     public function __construct()
     {
