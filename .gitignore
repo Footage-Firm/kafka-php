@@ -8,3 +8,7 @@ data/avsc
 data/avpr
 docker-compose.override.yml
 certs
+
+# Test output
+.phpunit.result.cache
+test-reports
