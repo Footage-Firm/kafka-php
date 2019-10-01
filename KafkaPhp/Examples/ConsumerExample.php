@@ -10,13 +10,13 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 class ConsumerExample
 {
 
-    private $schemaRegistryUrl = 'http://0.0.0.0:8081';
+    private $schemaRegistryUrl = 'http://localhost:8081';
 
-    private $brokers = ['0.0.0.0:29092'];
+    private $brokers = ['localhost:29092'];
 
     public function __construct()
     {
-        $this->brokers = getenv('KAFKA_URL') ? [getenv('KAFKA_URL')] : $this->brokers;
+        $this->brokers = getenv('BROKER_HOSTS') ? [getenv('BROKER_HOSTS')] : $this->brokers;
         $this->schemaRegistryUrl = getenv('SCHEMA_REGISTRY_URL') ?: $this->schemaRegistryUrl;
     }
 

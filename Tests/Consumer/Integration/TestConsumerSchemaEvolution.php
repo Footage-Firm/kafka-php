@@ -15,9 +15,9 @@ class TestConsumerSchemaEvolution extends TestCase
 
     use WithFaker;
 
-    private $schemaRegistryUrl = 'http://0.0.0.0:8081';
+    private $schemaRegistryUrl = 'http://localhost:8081';
 
-    private $brokers = ['0.0.0.0:29092'];
+    private $brokers = ['localhost:29092'];
 
     private $groupId;
 
@@ -26,7 +26,7 @@ class TestConsumerSchemaEvolution extends TestCase
         parent::setUp();
         $this->initFaker();
         $this->groupId = $this->faker->word;
-        $this->brokers = getenv('KAFKA_URL') ? [getenv('KAFKA_URL')] : $this->brokers;
+        $this->brokers = getenv('BROKER_HOSTS') ? [getenv('BROKER_HOSTS')] : $this->brokers;
         $this->schemaRegistryUrl = getenv('SCHEMA_REGISTRY_URL') ?: $this->schemaRegistryUrl;
     }
 
@@ -64,34 +64,10 @@ class TestConsumerSchemaEvolution extends TestCase
         });
 
         $consumer->consume($topic);
-
         $consumer->wait();
 
         $this->assertCount(10, $records);
 
-        $consumedOriginalRecords = [];
-        $consumedUpdatedRecords = [];
-
-        foreach ($records as $record) {
-            if (property_exists($record, 'newField')) {
-                $consumedUpdatedRecords[] = $record;
-                $updated = array_filter($updatedRecords, function ($updated) use ($record)
-                {
-                    return $updated->id === $record->id;
-                });
-                $this->assertNotNull($updated);
-            } else {
-                $consumedOriginalRecords[] = $record;
-                $original = array_filter($originalRecords, function ($original) use ($record)
-                {
-                    return $original->id === $record->id;
-                });
-                $this->assertNotNull($original);
-            }
-        }
-
-        $this->assertCount(5, $consumedOriginalRecords);
-        $this->assertCount(5, $consumedUpdatedRecords);
     }
 
 
