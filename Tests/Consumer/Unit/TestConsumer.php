@@ -50,7 +50,7 @@ class TestConsumer extends TestCase
           $this->mockSerializer,
           $this->mockLogger,
           $this->mockRecordProcessor,
-          10
+          1
         );
 
     }
