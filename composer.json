@@ -42,5 +42,8 @@
     "psr-4": {
       "Tests\\": "tests/"
     }
+  },
+  "provide": {
+    "ext-rdkafka": "*"
   }
 }
