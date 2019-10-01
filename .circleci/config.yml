@@ -37,6 +37,12 @@ jobs:
             - vendor
           key: vendor-v1-{{ checksum "composer.lock" }}
 
+      - run:
+          name: Wait for schema registry.
+          command: |
+            printf "Waiting for schema registry"
+            until curl 0.0.0.0:8081; do printf "."; sleep 1; done
+
       - run: vendor/bin/phpunit --log-junit test-reports/junit.xml
 
       - store_test_results:
