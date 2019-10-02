@@ -127,8 +127,8 @@ class TestProducer extends TestCase
           ->andThrow(Error::class);
 
         // Don't throw an error when producing the failure record
-        $mockTopicProducer_FailureRecord = Mockery::mock(ProducerTopic::class)->shouldIgnoreMissing();
-        $mockTopicProducer_FailureRecord->shouldReceive('produce')
+        $mockTopicProducer_FailedRecord = Mockery::mock(ProducerTopic::class)->shouldIgnoreMissing();
+        $mockTopicProducer_FailedRecord->shouldReceive('produce')
           ->times(1)
           ->withArgs([
             RD_KAFKA_PARTITION_UA,
@@ -138,7 +138,7 @@ class TestProducer extends TestCase
         
         $this->mockKafkaProducer->shouldReceive('newTopic')
           ->with('invalid-fake-record')
-          ->andReturn($mockTopicProducer_FailureRecord);
+          ->andReturn($mockTopicProducer_FailedRecord);
 
         /** @var ProducerAlias $producer */
         $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);

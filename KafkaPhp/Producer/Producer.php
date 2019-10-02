@@ -2,9 +2,9 @@
 
 namespace KafkaPhp\Producer;
 
+use EventsPhp\Util\EventFactory;
 use KafkaPhp\Common\KafkaListener;
 use KafkaPhp\Common\TopicFormatter;
-use KafkaPhp\Records\Failure\Failure;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use EventsPhp\BaseRecord;
 use Psr\Log\LoggerInterface;
@@ -62,11 +62,7 @@ class Producer
 
     private function produceFailureRecord(BaseRecord $record, string $topic, string $errorMsg): void
     {
-        $failure = new Failure();
-        $failure->setPayload(json_encode($record));
-        $failure->setTopic($topic);
-        $failure->setDetails($errorMsg);
-
-        $this->produce($failure, TopicFormatter::producerFailureTopic($topic), false);
+        $failedRecord = EventFactory::failedRecord($topic, $record, $errorMsg);
+        $this->produce($failedRecord, TopicFormatter::producerFailureTopic($topic), false);
     }
 }
