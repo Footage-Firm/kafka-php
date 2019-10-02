@@ -116,8 +116,8 @@ $producer->produce(new Duck(), 'pond-population');
 
 #### Failures
 
-If there is an error when trying to produce a record, the data is captured in a record (aptly named `FailureRecord`) and 
-written to a special topic: `fail-kebab-case-record-name`. Writing to the failure topic can be disabled and the number of
+If there is an error when trying to produce a record, the data is captured in a record (aptly named `FailedRecord`) and
+written to a special topic: `invalid-kebab-case-record-name`. Writing to the failure topic can be disabled and the number of
 retries is also configurable.
 
 #### Guarantees
