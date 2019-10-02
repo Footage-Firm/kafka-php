@@ -43,7 +43,7 @@ jobs:
             printf "Waiting for schema registry"
             until curl -s 0.0.0.0:8081 > /dev/null; do printf "."; sleep 1; done
 
-      - run: vendor/bin/phpunit --log-junit test-reports/junit.xml
+      - run: vendor/bin/phpunit --log-junit test-reports/junit.xml --testdox
 
       - store_test_results:
           path: test-reports
