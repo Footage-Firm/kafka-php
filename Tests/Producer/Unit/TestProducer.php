@@ -137,7 +137,7 @@ class TestProducer extends TestCase
           ]);
         
         $this->mockKafkaProducer->shouldReceive('newTopic')
-          ->with('fail-fake-record')
+          ->with('invalid-fake-record')
           ->andReturn($mockTopicProducer_FailureRecord);
 
         /** @var ProducerAlias $producer */
