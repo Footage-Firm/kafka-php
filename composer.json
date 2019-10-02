@@ -9,6 +9,7 @@
     }
   ],
   "scripts": {
+    "test": "vendor/bin/phpunit",
     "produce": "docker-compose run php php App/Producer/example.php",
     "consume": "docker-compose run php php App/Consumer/example.php"
   },
@@ -40,7 +41,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Tests\\": "tests/"
+      "Tests\\": "Tests/"
     }
   },
   "provide": {
