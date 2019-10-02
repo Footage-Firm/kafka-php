@@ -10,6 +10,7 @@ class TopicFormatter
 
     use ShortClassName;
 
+    public const INVALID_TOPIC_PREFIX = 'invalid-';
     public const FAILURE_TOPIC_PREFIX = 'fail-';
 
     public static function topicFromRecord(BaseRecord $record): string
@@ -24,7 +25,7 @@ class TopicFormatter
 
     public static function producerFailureTopic(string $originalTopic): string
     {
-        return self::FAILURE_TOPIC_PREFIX . $originalTopic;
+        return self::INVALID_TOPIC_PREFIX . $originalTopic;
     }
 
     public static function consumerFailureTopic(BaseRecord $record, string $groupId)
