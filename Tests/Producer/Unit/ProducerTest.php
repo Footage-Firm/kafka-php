@@ -10,11 +10,11 @@ use Mockery;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
-use Tests\BaseTest;
+use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
 
-class TestProducer extends BaseTest
+class ProducerTest extends BaseTestCase
 {
 
     /** @var \Mockery\Mock|\RdKafka\Producer */

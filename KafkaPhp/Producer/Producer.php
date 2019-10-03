@@ -5,6 +5,7 @@ namespace KafkaPhp\Producer;
 use EventsPhp\Util\EventFactory;
 use KafkaPhp\Common\KafkaListener;
 use KafkaPhp\Common\TopicFormatter;
+use KafkaPhp\Serializers\Errors\SchemaRegistryError;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use EventsPhp\BaseRecord;
 use Psr\Log\LoggerInterface;
@@ -47,6 +48,9 @@ class Producer
              * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
              */
             $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
+        } catch (SchemaRegistryError $e) {
+            // Propagate a schema registry error and do not retry.
+            throw $e;
         } catch (Throwable $t) {
             if ($produceFailureRecords) {
                 $this->produceFailureRecord($record, $topic, $t->getMessage());

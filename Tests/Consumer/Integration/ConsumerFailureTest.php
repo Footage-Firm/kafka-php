@@ -7,27 +7,20 @@ use EventsPhp\Storyblocks\Common\DebugRecord;
 use KafkaPhp\Consumer\ConsumerBuilder;
 use KafkaPhp\Logger\Logger;
 use KafkaPhp\Producer\ProducerBuilder;
-use Tests\BaseTest;
+use Tests\BaseTestCase;
 use Tests\Utils\Factory;
 
-class TestConsumerFailure extends BaseTest
+class ConsumerFailureTest extends BaseTestCase
 {
-
-    private $schemaRegistryUrl = 'http://0.0.0.0:8081';
-
-    private $brokers = ['0.0.0.0:29092'];
 
     private $groupId;
     private $topic;
-    private $env;
 
     public function setUp(): void
     {
+        parent::setUp();
         $this->groupId = $this->faker()->word;
-        $this->brokers = getenv('BROKER_HOST') ? [getenv('BROKER_HOST')] : $this->brokers;
-        $this->schemaRegistryUrl = getenv('SCHEMA_REGISTRY_URL') ?: $this->schemaRegistryUrl;
         $this->topic = 'test-'.$this->faker()->word;
-        $this->env = getenv('ENV');
     }
 
     public function testConsumerWritesToFailureTopic(): void
@@ -50,7 +43,7 @@ class TestConsumerFailure extends BaseTest
     }
 
     private function consumer() {
-        $builder = (new ConsumerBuilder($this->brokers, $this->groupId, $this->schemaRegistryUrl, new Logger()))
+        $builder = (new ConsumerBuilder($this->brokerHosts, $this->groupId, $this->schemaRegistryUrl, new Logger()))
             ->setNumRetries(0);
 
         if ($this->env) {
@@ -66,7 +59,7 @@ class TestConsumerFailure extends BaseTest
     }
 
     private function producer() {
-        $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl);
+        $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl);
 
         if ($this->env) {
             $CERTS = __DIR__.'/../../../certs';

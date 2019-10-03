@@ -13,10 +13,10 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RdKafka\KafkaConsumer;
 use RdKafka\Message;
-use Tests\BaseTest;
+use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeRecord;
 
-class TestConsumer extends BaseTest
+class ConsumerTest extends BaseTestCase
 {
 
     private $mockRecordProcessor;
@@ -92,9 +92,7 @@ class TestConsumer extends BaseTest
 
     public function topicDataProvider()
     {
-        $this->initFaker();
         $fakeTopics = $this->faker()->words(3);
-
         return [
           [null, ['fake-record']],
           [$fakeTopics[0], [$fakeTopics[0]]],

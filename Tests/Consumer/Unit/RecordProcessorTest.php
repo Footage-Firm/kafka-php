@@ -13,11 +13,11 @@ use KafkaPhp\Serializers\KafkaSerializerInterface;
 use KafkaPhp\Traits\RecordFormatter;
 use KafkaPhp\Traits\ShortClassName;
 use Mockery;
-use Tests\BaseTest;
+use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
 
-class TestRecordProcessor extends BaseTest
+class RecordProcessorTest extends BaseTestCase
 {
 
     use RecordFormatter, ShortClassName;

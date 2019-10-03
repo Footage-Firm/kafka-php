@@ -2,6 +2,8 @@
 
 namespace KafkaPhp\Serializers;
 
+use GuzzleHttp\Exception\ConnectException;
+use KafkaPhp\Serializers\Errors\SchemaRegistryError;
 use KafkaPhp\Traits\RecordFormatter;
 use AvroSchema;
 use EventsPhp\BaseRecord;
@@ -40,7 +42,11 @@ class AvroSerializer implements KafkaSerializerInterface
         $data = $record->data();
         $name = $this->kebabCase($record->name());
 
-        return $this->serializer->encodeRecord($name . '-value', $schema, $data);
+        try {
+            return $this->serializer->encodeRecord($name . '-value', $schema, $data);
+        } catch (\RuntimeException $e) {
+            throw new SchemaRegistryError('Error encoding record.', null, $e);
+        }
     }
 
     public function deserialize(string $payload): array

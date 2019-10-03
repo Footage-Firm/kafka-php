@@ -3,10 +3,10 @@
 namespace Tests\Common;
 
 use KafkaPhp\Common\TopicFormatter;
-use Tests\BaseTest;
+use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeRecord;
 
-class TestTopicFormatter extends BaseTest
+class TopicFormatterTest extends BaseTestCase
 {
 
     public function testTopicFromRecord()
@@ -31,13 +31,13 @@ class TestTopicFormatter extends BaseTest
     {
         $originalTopic = 'some-topic';
         $topic = TopicFormatter::producerFailureTopic($originalTopic);
-        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . 'some-topic', $topic);
+        self::assertEquals(TopicFormatter::INVALID_TOPIC_PREFIX . 'some-topic', $topic);
     }
 
     public function testConsumerFailureTopicFromRecord()
     {
         $groupId = $this->faker()->word;
         $topic = TopicFormatter::consumerFailureTopic(new FakeRecord(), $groupId);
-        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . $groupId . '-FakeRecord', $topic);
+        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . $groupId . '-fake-record', $topic);
     }
 }

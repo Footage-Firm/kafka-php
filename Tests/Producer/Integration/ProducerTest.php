@@ -4,22 +4,19 @@ namespace Test\Producer\Integration;
 
 use KafkaPhp\Producer\ProducerBuilder;
 use Exception;
+use KafkaPhp\Serializers\Errors\SchemaRegistryError;
 use RuntimeException;
-use Tests\BaseTest;
+use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
 
-class TestProducer extends BaseTest
+class ProducerTest extends BaseTestCase
 {
-
-    private $schemaRegistryUrl = "http://0.0.0.0:8081";
-
-    private $brokers = ["0.0.0.0:29092"];
 
     public function testExceptionThrown_WhenFailsToEncode()
     {
         $this->expectException(Exception::class);
-        $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl);
+        $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl);
         $producer = $builder->build();
         $record = new FakeRecord();
         $record->setId('test');
@@ -28,8 +25,8 @@ class TestProducer extends BaseTest
 
     public function testExceptionThrown_WhenSchemaRegUrlIsWrong()
     {
-        $this->expectException(RuntimeException::class);
-        $builder = new ProducerBuilder($this->brokers, 'http://not.gonna.work');
+        $this->expectException(SchemaRegistryError::class);
+        $builder = new ProducerBuilder($this->brokerHosts, 'http://not.gonna.work');
 
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());

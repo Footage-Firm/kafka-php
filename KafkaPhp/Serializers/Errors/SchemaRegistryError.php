@@ -1,10 +1,7 @@
 <?php
 
-
 namespace KafkaPhp\Serializers\Errors;
 
-
-class SchemaRegistryError
+class SchemaRegistryError extends \Exception
 {
-
 }
