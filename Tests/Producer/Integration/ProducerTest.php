@@ -2,10 +2,10 @@
 
 namespace Test\Producer\Integration;
 
-use KafkaPhp\Producer\Errors\ProducerTimeoutError;
+use KafkaPhp\Common\Exceptions\KafkaException;
 use KafkaPhp\Producer\ProducerBuilder;
 use Exception;
-use KafkaPhp\Serializers\Errors\SchemaRegistryError;
+use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
@@ -25,17 +25,18 @@ class ProducerTest extends BaseTestCase
 
     public function testExceptionThrown_WhenSchemaRegUrlIsWrong()
     {
-        $this->expectException(SchemaRegistryError::class);
+        $this->expectException(SchemaRegistryException::class);
         $builder = new ProducerBuilder($this->brokerHosts, 'http://not.gonna.work');
 
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());
     }
 
-    public function testConnectTimeout()
+    public function testBrokerConnectionFailure()
     {
-        $this->expectException(ProducerTimeoutError::class);
+        $this->expectException(KafkaException::class);
         $builder = new ProducerBuilder(['fake.host:1337'], $this->schemaRegistryUrl);
+        $builder->setTimeoutMs(10);
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());
     }

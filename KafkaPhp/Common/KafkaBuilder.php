@@ -2,13 +2,14 @@
 
 namespace KafkaPhp\Common;
 
-use KafkaPhp\Serializers\AvroSerializer;
-use KafkaPhp\Serializers\KafkaSerializerInterface;
 use FlixTech\SchemaRegistryApi\Registry;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
 use GuzzleHttp\Client;
+use KafkaPhp\Common\Exceptions\KafkaException;
+use KafkaPhp\Serializers\AvroSerializer;
+use KafkaPhp\Serializers\KafkaSerializerInterface;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
@@ -58,6 +59,7 @@ abstract class KafkaBuilder
         $this->config = $config ?? new Conf();
         $this->topicConfig = $topicConfig ?? new TopicConf();
         $this->config->set(ConfigOptions::BROKER_LIST, implode(',', $brokers));
+        $this->config->setErrorCb($this->defaultErrorCallback());
     }
 
     public function setSslData(string $caPath, string $certPath, string $keyPath): self
@@ -107,5 +109,13 @@ abstract class KafkaBuilder
         }
         $client = new Client($config);
         return new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
+    }
+
+    private function defaultErrorCallback(): callable
+    {
+        return function($rdkafka, $err, $reason) {
+            $this->logger->err('Rdkafka error callback invoked.', ['err' => $err, 'reason' => $reason]);
+            throw new KafkaException($reason, $err);
+        };
     }
 }

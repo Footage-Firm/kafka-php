@@ -3,7 +3,7 @@
 namespace KafkaPhp\Serializers;
 
 use GuzzleHttp\Exception\ConnectException;
-use KafkaPhp\Serializers\Errors\ProducerTimeoutError;
+use KafkaPhp\Serializers\Exceptions\ProducerTimeoutError;
 use KafkaPhp\Traits\RecordFormatter;
 use AvroSchema;
 use EventsPhp\BaseRecord;

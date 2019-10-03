@@ -6,12 +6,13 @@ use Carbon\Carbon;
 use EventsPhp\Util\EventFactory;
 use KafkaPhp\Common\KafkaListener;
 use KafkaPhp\Common\TopicFormatter;
-use KafkaPhp\Producer\Errors\ProducerTimeoutError;
-use KafkaPhp\Serializers\Errors\SchemaRegistryError;
+use KafkaPhp\Producer\Exceptions\ProducerTimeoutException;
+use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use EventsPhp\BaseRecord;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
+use RdKafka\TopicConf;
 use Throwable;
 
 
@@ -46,7 +47,9 @@ class Producer
     {
         $topic = $topic ?? TopicFormatter::topicFromRecord($record);
 
-        $topicProducer = $this->kafkaClient->newTopic($topic);
+        $topicConf = new TopicConf();
+        $topicConf->set('message.timeout.ms', $this->timeoutMs);
+        $topicProducer = $this->kafkaClient->newTopic($topic, $topicConf);
 
         try {
             $encodedRecord = $this->serializer->serialize($record);
@@ -55,7 +58,7 @@ class Producer
              * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
              */
             $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
-        } catch (SchemaRegistryError $e) {
+        } catch (SchemaRegistryException $e) {
             // Propagate a schema registry error and do not retry.
             throw $e;
         } catch (Throwable $t) {
@@ -66,12 +69,8 @@ class Producer
             throw $t;
         }
 
-        $start = Carbon::now();
         while ($this->kafkaClient->getOutQLen() > 0) {
             $this->kafkaClient->poll(100);
-            if (Carbon::now()->diffInMilliseconds($start) >= $this->timeoutMs) {
-                throw new ProducerTimeoutError("Producer timed out sending message");
-            }
         }
     }
 
