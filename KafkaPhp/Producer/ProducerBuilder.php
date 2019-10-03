@@ -11,6 +11,9 @@ class ProducerBuilder extends KafkaBuilder
 {
 
     public const DEFAULT_RETRIES = 3;
+    public const DEFAULT_TIMEOUT_MS = 3000;
+
+    private $timeoutMs = self::DEFAULT_TIMEOUT_MS;
 
     public function __construct(
       array $brokers,
@@ -35,8 +38,13 @@ class ProducerBuilder extends KafkaBuilder
     public function build(): Producer
     {
         $kafkaProducer = new KafkaProducer($this->config);
+        return new Producer($kafkaProducer, $this->serializer, $this->logger, $this->timeoutMs);
+    }
 
-        return new Producer($kafkaProducer, $this->serializer, $this->logger);
+    public function setTimeoutMs(int $timeoutMs): self
+    {
+        $this->timeoutMs = $timeoutMs;
+        return $this;
     }
 
     // Signature of the callback function is function (RdKafka\RdKafka $kafka, RdKafka\Message $message);

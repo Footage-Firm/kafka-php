@@ -2,10 +2,10 @@
 
 namespace Test\Producer\Integration;
 
+use KafkaPhp\Producer\Errors\ProducerTimeoutError;
 use KafkaPhp\Producer\ProducerBuilder;
 use Exception;
 use KafkaPhp\Serializers\Errors\SchemaRegistryError;
-use RuntimeException;
 use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
@@ -34,6 +34,7 @@ class ProducerTest extends BaseTestCase
 
     public function testConnectTimeout()
     {
+        $this->expectException(ProducerTimeoutError::class);
         $builder = new ProducerBuilder(['fake.host:1337'], $this->schemaRegistryUrl);
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());

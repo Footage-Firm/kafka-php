@@ -2,9 +2,11 @@
 
 namespace KafkaPhp\Producer;
 
+use Carbon\Carbon;
 use EventsPhp\Util\EventFactory;
 use KafkaPhp\Common\KafkaListener;
 use KafkaPhp\Common\TopicFormatter;
+use KafkaPhp\Producer\Errors\ProducerTimeoutError;
 use KafkaPhp\Serializers\Errors\SchemaRegistryError;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use EventsPhp\BaseRecord;
@@ -25,14 +27,19 @@ class Producer
     /** @var \Psr\Log\LoggerInterface */
     private $logger;
 
+    /** @var int */
+    private $timeoutMs;
+
     public function __construct(
       KafkaProducer $kafkaClient,
       KafkaSerializerInterface $serializer,
-      LoggerInterface $logger
+      LoggerInterface $logger,
+      int $timeoutMs
     ) {
         $this->serializer = $serializer;
         $this->kafkaClient = $kafkaClient;
         $this->logger = $logger;
+        $this->timeoutMs = $timeoutMs;
     }
 
     public function produce(BaseRecord $record, string $topic = null, bool $produceFailureRecords = true): void
@@ -59,8 +66,12 @@ class Producer
             throw $t;
         }
 
+        $start = Carbon::now();
         while ($this->kafkaClient->getOutQLen() > 0) {
             $this->kafkaClient->poll(100);
+            if (Carbon::now()->diffInMilliseconds($start) >= $this->timeoutMs) {
+                throw new ProducerTimeoutError("Producer timed out sending message");
+            }
         }
     }
 
