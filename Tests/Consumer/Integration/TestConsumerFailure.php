@@ -6,18 +6,12 @@ namespace Tests\Consumer\Integration;
 use EventsPhp\Storyblocks\Common\DebugRecord;
 use KafkaPhp\Consumer\ConsumerBuilder;
 use KafkaPhp\Logger\Logger;
-use KafkaPhp\Producer\Producer;
 use KafkaPhp\Producer\ProducerBuilder;
-use EventsPhp\BaseRecord;
-use PHPUnit\Framework\TestCase;
-use Tests\Fakes\FakeFactory;
+use Tests\BaseTest;
 use Tests\Utils\Factory;
-use Tests\WithFaker;
 
-class TestConsumerFailure extends TestCase
+class TestConsumerFailure extends BaseTest
 {
-
-    use WithFaker;
 
     private $schemaRegistryUrl = 'http://0.0.0.0:8081';
 
@@ -29,11 +23,10 @@ class TestConsumerFailure extends TestCase
 
     public function setUp(): void
     {
-        $this->initFaker();
-        $this->groupId = $this->faker->word;
+        $this->groupId = $this->faker()->word;
         $this->brokers = getenv('BROKER_HOST') ? [getenv('BROKER_HOST')] : $this->brokers;
         $this->schemaRegistryUrl = getenv('SCHEMA_REGISTRY_URL') ?: $this->schemaRegistryUrl;
-        $this->topic = 'test-'.$this->faker->word;
+        $this->topic = 'test-'.$this->faker()->word;
         $this->env = getenv('ENV');
     }
 
@@ -50,7 +43,7 @@ class TestConsumerFailure extends TestCase
                 $consumer->disconnect();
             });
 
-        $producer->produce(Factory::debugRecord($this->faker->word), $this->topic);
+        $producer->produce(Factory::debugRecord($this->faker()->word), $this->topic);
 
         $consumer->consume($this->topic);
         $consumer->wait();

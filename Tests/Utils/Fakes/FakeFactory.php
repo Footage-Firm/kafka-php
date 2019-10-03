@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fakes;
+namespace Tests\Util\Fakes;
 
 use Faker\Factory;
 

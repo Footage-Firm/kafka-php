@@ -8,12 +8,11 @@ use KafkaPhp\Producer\Producer;
 use KafkaPhp\Producer\ProducerBuilder;
 use EventsPhp\BaseRecord;
 use PHPUnit\Framework\TestCase;
+use Tests\BaseTest;
 use Tests\WithFaker;
 
-class TestConsumerSchemaEvolution extends TestCase
+class TestConsumerSchemaEvolution extends BaseTest
 {
-
-    use WithFaker;
 
     private $schemaRegistryUrl = 'http://0.0.0.0:8081';
 
@@ -24,8 +23,7 @@ class TestConsumerSchemaEvolution extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->initFaker();
-        $this->groupId = $this->faker->word;
+        $this->groupId = $this->faker()->word;
         $this->brokers = getenv('BROKER_HOSTS') ? [getenv('BROKER_HOSTS')] : $this->brokers;
         $this->schemaRegistryUrl = getenv('SCHEMA_REGISTRY_URL') ?: $this->schemaRegistryUrl;
     }
@@ -36,7 +34,7 @@ class TestConsumerSchemaEvolution extends TestCase
         //
         // Produce 5 records with EvolvingRecord schema, then update the schema by adding 'NewField' and produce 5 more records
         //
-        $topic = $this->faker->word;
+        $topic = $this->faker()->word;
         print "Using topic $topic and group id $this->groupId\n";
         $producer = (new ProducerBuilder($this->brokers, $this->schemaRegistryUrl))
           ->shouldSendToFailureTopic(false)

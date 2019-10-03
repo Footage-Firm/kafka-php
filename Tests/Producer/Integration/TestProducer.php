@@ -4,22 +4,13 @@ namespace Test\Producer\Integration;
 
 use KafkaPhp\Producer\ProducerBuilder;
 use Exception;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Tests\Fakes\FakeFactory;
-use Tests\Fakes\FakeRecord;
-use Tests\WithFaker;
+use Tests\BaseTest;
+use Tests\Util\Fakes\FakeFactory;
+use Tests\Util\Fakes\FakeRecord;
 
-class TestProducer extends TestCase
+class TestProducer extends BaseTest
 {
-
-    use WithFaker;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        $this->initFaker();
-    }
 
     private $schemaRegistryUrl = "http://0.0.0.0:8081";
 
@@ -40,6 +31,13 @@ class TestProducer extends TestCase
         $this->expectException(RuntimeException::class);
         $builder = new ProducerBuilder($this->brokers, 'http://not.gonna.work');
 
+        $producer = $builder->build();
+        $producer->produce(FakeFactory::fakeRecord());
+    }
+
+    public function testConnectTimeout()
+    {
+        $builder = new ProducerBuilder(['fake.host:1337'], $this->schemaRegistryUrl);
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());
     }

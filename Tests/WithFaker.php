@@ -9,11 +9,14 @@ trait WithFaker
 {
 
     /** @var Generator */
-    protected $faker;
+    private $faker;
 
-    public function initFaker(): void
+    protected function faker(): Generator
     {
-        $this->faker = Factory::create();
+        if (!$this->faker) {
+            $this->faker = Factory::create();
+        }
+        return $this->faker;
     }
 }
 

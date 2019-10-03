@@ -13,13 +13,11 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RdKafka\KafkaConsumer;
 use RdKafka\Message;
-use Tests\Fakes\FakeRecord;
-use Tests\WithFaker;
+use Tests\BaseTest;
+use Tests\Util\Fakes\FakeRecord;
 
-class TestConsumer extends TestCase
+class TestConsumer extends BaseTest
 {
-
-    use WithFaker;
 
     private $mockRecordProcessor;
 
@@ -42,7 +40,6 @@ class TestConsumer extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->initFaker();
         $this->setUpmocks();
 
         $this->consumer = new Consumer(
@@ -96,7 +93,7 @@ class TestConsumer extends TestCase
     public function topicDataProvider()
     {
         $this->initFaker();
-        $fakeTopics = $this->faker->words(3);
+        $fakeTopics = $this->faker()->words(3);
 
         return [
           [null, ['fake-record']],
@@ -184,7 +181,7 @@ class TestConsumer extends TestCase
           RD_KAFKA_RESP_ERR__SSL,
         ];
         $err = array_rand($someErrors);
-        $errStr = $this->faker->word;
+        $errStr = $this->faker()->word;
         $this->mockKafkaClientWithMessage($err, $errStr);
 
         $this->mockSerializer->shouldNotReceive('deserialize');

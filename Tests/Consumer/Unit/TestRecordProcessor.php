@@ -3,6 +3,8 @@
 namespace Test\Consumer\Unit;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
+use Exception;
+use Hamcrest\Core\IsEqual;
 use KafkaPhp\Common\TopicFormatter;
 use KafkaPhp\Consumer\RecordProcessor;
 use KafkaPhp\Logger\Logger;
@@ -10,20 +12,15 @@ use KafkaPhp\Producer\Producer;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use KafkaPhp\Traits\RecordFormatter;
 use KafkaPhp\Traits\ShortClassName;
-use Exception;
-use Hamcrest\Core\IsEqual;
 use Mockery;
-use PHPUnit\Framework\TestCase;
-use Tests\Fakes\FakeFactory;
-use Tests\Fakes\FakeRecord;
-use Tests\Fakes\FakeRecordTwo;
-use Tests\WithFaker;
+use Tests\BaseTest;
+use Tests\Util\Fakes\FakeFactory;
+use Tests\Util\Fakes\FakeRecord;
 
-
-class TestRecordProcessor extends TestCase
+class TestRecordProcessor extends BaseTest
 {
 
-    use WithFaker, RecordFormatter, ShortClassName;
+    use RecordFormatter, ShortClassName;
 
     private $mockRegistry;
 
@@ -52,8 +49,6 @@ class TestRecordProcessor extends TestCase
 
     public function setUp(): void
     {
-        $this->initFaker();
-
         $this->fakeRecord = FakeFactory::fakeRecord();
         $this->fakeDecodedArray = [
           self::shortClassName(FakeRecord::class) => $this->fakeRecord->jsonSerialize(),
@@ -61,7 +56,7 @@ class TestRecordProcessor extends TestCase
         $this->mockSuccessFn = new MockeryCallableMock();
         $this->mockFailureFn = new MockeryCallableMock();
         $this->mockFailureProducer = Mockery::mock(Producer::class);
-        $this->fakeGroupId = $this->faker->word;
+        $this->fakeGroupId = $this->faker()->word;
 
         $this->initRecordProcessor();
     }
@@ -138,7 +133,7 @@ class TestRecordProcessor extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $numRetries = $this->faker->randomNumber(1);
+        $numRetries = $this->faker()->randomNumber(1);
         $topic = sprintf('%s%s-%s', TopicFormatter::FAILURE_TOPIC_PREFIX, $this->fakeGroupId, 'fake-record');
         $this->mockFailureProducer->shouldReceive('produce')
           ->once()

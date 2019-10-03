@@ -2,23 +2,20 @@
 
 namespace Tests\Producer\Unit;
 
+use Error;
 use KafkaPhp\Producer\Producer;
 use KafkaPhp\Producer\Producer as ProducerAlias;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
-use Error;
 use Mockery;
-use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
-use Tests\Fakes\FakeFactory;
-use Tests\Fakes\FakeRecord;
-use Tests\WithFaker;
+use Tests\BaseTest;
+use Tests\Util\Fakes\FakeFactory;
+use Tests\Util\Fakes\FakeRecord;
 
-class TestProducer extends TestCase
+class TestProducer extends BaseTest
 {
-
-    use WithFaker;
 
     /** @var \Mockery\Mock|\RdKafka\Producer */
     private $mockKafkaProducer;
@@ -29,7 +26,7 @@ class TestProducer extends TestCase
 
     private $topic;
 
-    /** @var \Tests\Fakes\FakeRecord */
+    /** @var FakeRecord */
     private $mockRecord;
 
     private $fakeEncodedRecord;
@@ -40,10 +37,9 @@ class TestProducer extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->initFaker();
 
-        $this->topic = $this->faker->word;
-        $this->fakeEncodedRecord = $this->faker->word;
+        $this->topic = $this->faker()->word;
+        $this->fakeEncodedRecord = $this->faker()->word;
         $this->mockKafkaProducer = Mockery::mock(KafkaProducer::class)->shouldIgnoreMissing();
         $this->mockSerializer = Mockery::mock(KafkaSerializerInterface::class);
         $this->mockLogger = Mockery::mock(LoggerInterface::class);// new FakeLogger();
@@ -90,7 +86,7 @@ class TestProducer extends TestCase
 
     public function testCorrectTopicIsProduced_TopicProvided()
     {
-        $fakeTopic = $this->faker->word;
+        $fakeTopic = $this->faker()->word;
 
         $this->expectNotToPerformAssertions();
 
