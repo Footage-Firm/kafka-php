@@ -2,11 +2,8 @@
 
 namespace KafkaPhp\Producer;
 
-use Carbon\Carbon;
 use EventsPhp\Util\EventFactory;
-use KafkaPhp\Common\KafkaListener;
 use KafkaPhp\Common\TopicFormatter;
-use KafkaPhp\Producer\Exceptions\ProducerTimeoutException;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use EventsPhp\BaseRecord;
@@ -35,7 +32,7 @@ class Producer
       KafkaProducer $kafkaClient,
       KafkaSerializerInterface $serializer,
       LoggerInterface $logger,
-      int $timeoutMs
+      ?int $timeoutMs = ProducerBuilder::DEFAULT_TIMEOUT_MS
     ) {
         $this->serializer = $serializer;
         $this->kafkaClient = $kafkaClient;

@@ -4,12 +4,13 @@ namespace Tests\Producer\Unit;
 
 use Error;
 use KafkaPhp\Producer\Producer;
-use KafkaPhp\Producer\Producer as ProducerAlias;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use Mockery;
+use Mockery\MockInterface;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
+use RdKafka\TopicConf;
 use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
@@ -17,7 +18,7 @@ use Tests\Util\Fakes\FakeRecord;
 class ProducerTest extends BaseTestCase
 {
 
-    /** @var \Mockery\Mock|\RdKafka\Producer */
+    /** @var MockInterface|KafkaProducer */
     private $mockKafkaProducer;
 
     private $mockSerializer;
@@ -91,13 +92,15 @@ class ProducerTest extends BaseTestCase
         $this->expectNotToPerformAssertions();
 
         $this->mockTopicProducer->shouldReceive('produce')->withArgs([
-          RD_KAFKA_PARTITION_UA,
-          0,
-          $this->fakeEncodedRecord,
+            RD_KAFKA_PARTITION_UA,
+            0,
+            $this->fakeEncodedRecord,
         ]);
+
         $this->mockKafkaProducer->shouldReceive('newTopic')
-          ->with($fakeTopic)
-          ->andReturn($this->mockTopicProducer);
+            ->with($fakeTopic, Mockery::type(TopicConf::class))
+            ->once()
+            ->andReturn($this->mockTopicProducer);
 
         /** @var ProducerAlias $producer */
         $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);
@@ -113,30 +116,30 @@ class ProducerTest extends BaseTestCase
         $this->mockLogger->shouldReceive('error');
 
         $this->mockKafkaProducer->shouldReceive('newTopic')
-          ->with('fake-record')
-          ->andReturn($this->mockTopicProducer);
+            ->with('fake-record', Mockery::type(TopicConf::class))
+            ->once()
+            ->andReturn($this->mockTopicProducer);
 
         // Throw an error when trying to produce initially
         $this->mockTopicProducer->shouldReceive('produce')
-          ->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord])
-          ->times(1)
-          ->andThrow(Error::class);
+            ->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord])
+            ->once()
+            ->andThrow(Error::class);
 
         // Don't throw an error when producing the failure record
         $mockTopicProducer_FailedRecord = Mockery::mock(ProducerTopic::class)->shouldIgnoreMissing();
         $mockTopicProducer_FailedRecord->shouldReceive('produce')
-          ->times(1)
-          ->withArgs([
-            RD_KAFKA_PARTITION_UA,
-            0,
-            $this->fakeEncodedRecord,
-          ]);
-        
-        $this->mockKafkaProducer->shouldReceive('newTopic')
-          ->with('invalid-fake-record')
-          ->andReturn($mockTopicProducer_FailedRecord);
+            ->once()
+            ->withArgs([
+                RD_KAFKA_PARTITION_UA,
+                0,
+                $this->fakeEncodedRecord,
+            ]);
 
-        /** @var ProducerAlias $producer */
+        $this->mockKafkaProducer->shouldReceive('newTopic')
+            ->with('invalid-fake-record', Mockery::type(TopicConf::class))
+            ->andReturn($mockTopicProducer_FailedRecord);
+
         $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);
 
         $producer->produce(new FakeRecord());

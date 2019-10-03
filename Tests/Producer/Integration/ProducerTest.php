@@ -4,7 +4,6 @@ namespace Test\Producer\Integration;
 
 use KafkaPhp\Common\Exceptions\KafkaException;
 use KafkaPhp\Producer\ProducerBuilder;
-use Exception;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
@@ -15,7 +14,7 @@ class ProducerTest extends BaseTestCase
 
     public function testExceptionThrown_WhenFailsToEncode()
     {
-        $this->expectException(Exception::class);
+        $this->expectException(SchemaRegistryException::class);
         $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl);
         $producer = $builder->build();
         $record = new FakeRecord();

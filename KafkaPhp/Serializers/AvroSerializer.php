@@ -2,15 +2,14 @@
 
 namespace KafkaPhp\Serializers;
 
-use GuzzleHttp\Exception\ConnectException;
-use KafkaPhp\Serializers\Exceptions\ProducerTimeoutError;
-use KafkaPhp\Traits\RecordFormatter;
 use AvroSchema;
 use EventsPhp\BaseRecord;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
 use FlixTech\AvroSerializer\Objects\RecordSerializer;
 use FlixTech\SchemaRegistryApi\Registry;
 use GuzzleHttp\Promise\PromiseInterface;
+use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
+use KafkaPhp\Traits\RecordFormatter;
 use function FlixTech\AvroSerializer\Protocol\decode;
 use function Widmogrod\Functional\valueOf;
 
@@ -45,7 +44,7 @@ class AvroSerializer implements KafkaSerializerInterface
         try {
             return $this->serializer->encodeRecord($name . '-value', $schema, $data);
         } catch (\RuntimeException $e) {
-            throw new ProducerTimeoutError('Error encoding record.', null, $e);
+            throw new SchemaRegistryException('Error encoding record.', null, $e);
         }
     }
 
