@@ -3,12 +3,13 @@
 namespace KafkaPhp\Producer;
 
 use EventsPhp\Util\EventFactory;
-use KafkaPhp\Common\KafkaListener;
 use KafkaPhp\Common\TopicFormatter;
+use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use EventsPhp\BaseRecord;
 use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
+use RdKafka\TopicConf;
 use Throwable;
 
 
@@ -24,21 +25,28 @@ class Producer
     /** @var \Psr\Log\LoggerInterface */
     private $logger;
 
+    /** @var int */
+    private $timeoutMs;
+
     public function __construct(
       KafkaProducer $kafkaClient,
       KafkaSerializerInterface $serializer,
-      LoggerInterface $logger
+      LoggerInterface $logger,
+      ?int $timeoutMs = ProducerBuilder::DEFAULT_TIMEOUT_MS
     ) {
         $this->serializer = $serializer;
         $this->kafkaClient = $kafkaClient;
         $this->logger = $logger;
+        $this->timeoutMs = $timeoutMs;
     }
 
     public function produce(BaseRecord $record, string $topic = null, bool $produceFailureRecords = true): void
     {
         $topic = $topic ?? TopicFormatter::topicFromRecord($record);
 
-        $topicProducer = $this->kafkaClient->newTopic($topic);
+        $topicConf = new TopicConf();
+        $topicConf->set('message.timeout.ms', $this->timeoutMs);
+        $topicProducer = $this->kafkaClient->newTopic($topic, $topicConf);
 
         try {
             $encodedRecord = $this->serializer->serialize($record);
@@ -47,6 +55,9 @@ class Producer
              * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
              */
             $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
+        } catch (SchemaRegistryException $e) {
+            // Propagate a schema registry error and do not retry.
+            throw $e;
         } catch (Throwable $t) {
             if ($produceFailureRecords) {
                 $this->produceFailureRecord($record, $topic, $t->getMessage());

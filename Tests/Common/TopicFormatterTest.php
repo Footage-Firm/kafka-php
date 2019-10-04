@@ -3,13 +3,11 @@
 namespace Tests\Common;
 
 use KafkaPhp\Common\TopicFormatter;
-use Tests\Fakes\FakeRecord;
-use Tests\WithFaker;
+use Tests\BaseTestCase;
+use Tests\Util\Fakes\FakeRecord;
 
-class TestTopicFormatter
+class TopicFormatterTest extends BaseTestCase
 {
-
-    use WithFaker;
 
     public function testTopicFromRecord()
     {
@@ -20,7 +18,7 @@ class TestTopicFormatter
     public function testTopiFromRecordName()
     {
         $fakeRecordName = '';
-        $words = $this->faker->words(3);
+        $words = $this->faker()->words(3);
         foreach ($words as $word) {
             $fakeRecordName .= ucfirst($word);
         }
@@ -29,17 +27,17 @@ class TestTopicFormatter
         self::assertEquals(strtolower(implode('-', $words)), $topic);
     }
 
-    public function testProduverFailureTopicFromRecord()
+    public function testProducerFailureTopicFromRecord()
     {
         $originalTopic = 'some-topic';
         $topic = TopicFormatter::producerFailureTopic($originalTopic);
-        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . 'some-topic', $topic);
+        self::assertEquals(TopicFormatter::INVALID_TOPIC_PREFIX . 'some-topic', $topic);
     }
 
     public function testConsumerFailureTopicFromRecord()
     {
-        $groupId = $this->faker->word;
+        $groupId = $this->faker()->word;
         $topic = TopicFormatter::consumerFailureTopic(new FakeRecord(), $groupId);
-        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . $groupId . '-FakeRecord', $topic);
+        self::assertEquals(TopicFormatter::FAILURE_TOPIC_PREFIX . $groupId . '-fake-record', $topic);
     }
 }

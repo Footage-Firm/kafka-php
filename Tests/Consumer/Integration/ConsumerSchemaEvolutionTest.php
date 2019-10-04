@@ -7,27 +7,17 @@ use KafkaPhp\Consumer\ConsumerBuilder;
 use KafkaPhp\Producer\Producer;
 use KafkaPhp\Producer\ProducerBuilder;
 use EventsPhp\BaseRecord;
-use PHPUnit\Framework\TestCase;
-use Tests\WithFaker;
+use Tests\BaseTestCase;
 
-class TestConsumerSchemaEvolution extends TestCase
+class ConsumerSchemaEvolutionTest extends BaseTestCase
 {
-
-    use WithFaker;
-
-    private $schemaRegistryUrl = 'http://0.0.0.0:8081';
-
-    private $brokers = ['0.0.0.0:29092'];
 
     private $groupId;
 
     public function setUp(): void
     {
         parent::setUp();
-        $this->initFaker();
-        $this->groupId = $this->faker->word;
-        $this->brokers = getenv('BROKER_HOSTS') ? [getenv('BROKER_HOSTS')] : $this->brokers;
-        $this->schemaRegistryUrl = getenv('SCHEMA_REGISTRY_URL') ?: $this->schemaRegistryUrl;
+        $this->groupId = $this->faker()->word;
     }
 
     public function testConsumerCanReadRecordWithUpdatedSchema(): void
@@ -36,9 +26,9 @@ class TestConsumerSchemaEvolution extends TestCase
         //
         // Produce 5 records with EvolvingRecord schema, then update the schema by adding 'NewField' and produce 5 more records
         //
-        $topic = $this->faker->word;
+        $topic = $this->faker()->word;
         print "Using topic $topic and group id $this->groupId\n";
-        $producer = (new ProducerBuilder($this->brokers, $this->schemaRegistryUrl))
+        $producer = (new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl))
           ->shouldSendToFailureTopic(false)
           ->build();
 
@@ -49,7 +39,7 @@ class TestConsumerSchemaEvolution extends TestCase
         // Create a consumer that listens to the topic with EvolvingRecord. This will first read the events produced
         // with the old schema, then the new schema, and no errors should be thrown.
         //
-        $consumer = (new ConsumerBuilder($this->brokers, $this->groupId, $this->schemaRegistryUrl))
+        $consumer = (new ConsumerBuilder($this->brokerHosts, $this->groupId, $this->schemaRegistryUrl))
           ->setNumRetries(0)
           ->build();
 
