@@ -59,7 +59,7 @@ abstract class KafkaBuilder
         $this->config = $config ?? new Conf();
         $this->topicConfig = $topicConfig ?? new TopicConf();
         $this->config->set(ConfigOptions::BROKER_LIST, implode(',', $brokers));
-        $this->config->setErrorCb($this->defaultErrorCallback());
+        $this->config->setErrorCb([$this, 'defaultErrorCallback']);
     }
 
     public function setSslData(string $caPath, string $certPath, string $keyPath): self
@@ -111,11 +111,8 @@ abstract class KafkaBuilder
         return new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     }
 
-    private function defaultErrorCallback(): callable
+    public function defaultErrorCallback(\Rdkafka\Producer $kafka, int $err, string $reason)
     {
-        return function($rdkafka, $err, $reason) {
-            $this->logger->err('Rdkafka error callback invoked.', ['err' => $err, 'reason' => $reason]);
-            throw new KafkaException($reason, $err);
-        };
+        throw new \RuntimeException($reason, $err);
     }
 }
