@@ -2,7 +2,6 @@
 
 namespace Test\Producer\Integration;
 
-use KafkaPhp\Common\Exceptions\KafkaException;
 use KafkaPhp\Producer\ProducerBuilder;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use Tests\BaseTestCase;
@@ -33,7 +32,7 @@ class ProducerTest extends BaseTestCase
 
     public function testBrokerConnectionFailure()
     {
-        $this->expectException(KafkaException::class);
+        $this->expectException(\RuntimeException::class);
         $builder = new ProducerBuilder(['fake.host:1337'], $this->schemaRegistryUrl);
         $builder->setTimeoutMs(10);
         $producer = $builder->build();
