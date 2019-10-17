@@ -5,7 +5,7 @@ namespace KafkaPhp\Common;
 class ConsumerConfigOptions
 {
 
-    public const AUTO_COMMIT = 'auto.commit.enable';
+    public const AUTO_COMMIT = 'enable.auto.commit';
 
     public const AUTO_COMMIT_INTERVAL = 'auto.commit.interval.ms';
 
