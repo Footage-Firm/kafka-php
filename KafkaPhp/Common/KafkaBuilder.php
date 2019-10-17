@@ -111,7 +111,7 @@ abstract class KafkaBuilder
         return new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     }
 
-    public function defaultErrorCallback(\Rdkafka\Producer $kafka, int $err, string $reason)
+    public function defaultErrorCallback(\Rdkafka $kafka, int $err, string $reason)
     {
         throw new \RuntimeException($reason, $err);
     }
