@@ -2,6 +2,7 @@
 
 namespace KafkaPhp\Consumer;
 
+use EventsPhp\Storyblocks\Common\Origin;
 use KafkaPhp\Common\ConfigOptions;
 use KafkaPhp\Common\ConsumerConfigOptions;
 use KafkaPhp\Common\KafkaBuilder;
@@ -13,7 +14,6 @@ use FlixTech\SchemaRegistryApi\Registry;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\KafkaConsumer;
-use RdKafka\TopicConf;
 
 class ConsumerBuilder extends KafkaBuilder
 {
@@ -45,23 +45,21 @@ class ConsumerBuilder extends KafkaBuilder
       array $brokers,
       string $groupId,
       string $schemaRegistryUrl,
+      Origin $origin,
       LoggerInterface $logger = null,
       Conf $config = null,
-      TopicConf $topicConf = null,
       Registry $registry = null,
       KafkaSerializerInterface $serializer = null
     ) {
-        parent::__construct($brokers, $schemaRegistryUrl, $logger, $config, $topicConf, $registry, $serializer);
+        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config, $registry, $serializer);
         $this->groupId = $groupId;
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
-        $this->topicConfig = $topicConf ?? $this->defaultTopicConfig();
+        $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
         $this->disableAutoCommit();
     }
 
     public function build(): Consumer
     {
-        $this->buildTopicConfig();
-        $this->config->setDefaultTopicConf($this->topicConfig);
         $kafkaConsumer = new KafkaConsumer($this->config);
         $failureProducer = $this->createFailureProducer();
         $recordProcessor = $this->createRecordProcessor($failureProducer);
@@ -75,11 +73,6 @@ class ConsumerBuilder extends KafkaBuilder
           $this->connectTimeoutMs,
           $this->pollIntervalMs
         );
-    }
-
-    public function buildTopicConfig(): void
-    {
-        $this->topicConfig->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
     }
 
     public function setOffsetReset(string $offset): self
@@ -111,19 +104,6 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function setTopicConfig(TopicConf $topicConf): self
-    {
-        $this->topicConfig = $topicConf;
-        return $this;
-    }
-
-    protected function defaultTopicConfig(): TopicConf
-    {
-        $topicConfig = new TopicConf();
-        $topicConfig->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
-        return $topicConfig;
-    }
-
     protected function disableAutoCommit(): self
     {
         $this->config->set(ConsumerConfigOptions::AUTO_COMMIT, 'false');
@@ -150,7 +130,7 @@ class ConsumerBuilder extends KafkaBuilder
          */
         $configDump = $this->config->dump();
 
-        $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl);
+        $builder = new ProducerBuilder($this->brokers, $this->schemaRegistryUrl, $this->origin);
 
         if ($this->isUsingSsl($configDump)) {
             $builder->setSslData(

@@ -4,6 +4,7 @@
 namespace Tests\Consumer\Integration;
 
 use EventsPhp\Storyblocks\Common\DebugRecord;
+use EventsPhp\Storyblocks\Common\Origin;
 use KafkaPhp\Consumer\ConsumerBuilder;
 use KafkaPhp\Logger\Logger;
 use KafkaPhp\Producer\ProducerBuilder;
@@ -43,7 +44,7 @@ class ConsumerFailureTest extends BaseTestCase
     }
 
     private function consumer() {
-        $builder = (new ConsumerBuilder($this->brokerHosts, $this->groupId, $this->schemaRegistryUrl, new Logger()))
+        $builder = (new ConsumerBuilder($this->brokerHosts, $this->groupId, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS(), new Logger()))
             ->setNumRetries(0);
 
         if ($this->env) {
@@ -59,7 +60,7 @@ class ConsumerFailureTest extends BaseTestCase
     }
 
     private function producer() {
-        $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl);
+        $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS());
 
         if ($this->env) {
             $CERTS = __DIR__.'/../../../certs';

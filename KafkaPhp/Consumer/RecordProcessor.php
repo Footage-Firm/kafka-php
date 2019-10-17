@@ -23,6 +23,7 @@ class RecordProcessor
 
     private $groupId;
 
+    /** @var Producer */
     private $failureProducer;
 
     /** @var LoggerInterface */

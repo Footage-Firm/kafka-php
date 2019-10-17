@@ -2,6 +2,7 @@
 
 namespace KafkaPhp\Producer;
 
+use EventsPhp\Storyblocks\Common\Origin;
 use KafkaPhp\Common\KafkaBuilder;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
@@ -18,10 +19,11 @@ class ProducerBuilder extends KafkaBuilder
     public function __construct(
       array $brokers,
       string $schemaRegistryUrl,
+      Origin $origin,
       LoggerInterface $logger = null,
       Conf $config = null
     ) {
-        parent::__construct($brokers, $schemaRegistryUrl, $logger, $config);
+        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config);
 
         $this->config->set('retries', self::DEFAULT_RETRIES);
         $this->config->set('acks', 'all');
@@ -38,7 +40,7 @@ class ProducerBuilder extends KafkaBuilder
     public function build(): Producer
     {
         $kafkaProducer = new KafkaProducer($this->config);
-        return new Producer($kafkaProducer, $this->serializer, $this->logger, $this->timeoutMs);
+        return new Producer($kafkaProducer, $this->serializer, $this->origin, $this->logger, $this->timeoutMs);
     }
 
     public function setTimeoutMs(int $timeoutMs): self

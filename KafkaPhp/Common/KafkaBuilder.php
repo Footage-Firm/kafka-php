@@ -2,6 +2,7 @@
 
 namespace KafkaPhp\Common;
 
+use EventsPhp\Storyblocks\Common\Origin;
 use FlixTech\SchemaRegistryApi\Registry;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
@@ -14,16 +15,12 @@ use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\Consumer;
 use RdKafka\Producer;
-use RdKafka\TopicConf;
 
 abstract class KafkaBuilder
 {
 
     /** @var Conf */
     protected $config;
-
-    /** @var TopicConf */
-    protected $topicConfig;
 
     /** @var KafkaSerializerInterface */
     protected $serializer;
@@ -39,6 +36,9 @@ abstract class KafkaBuilder
     /** @var string[] */
     protected $brokers;
 
+    /** @var Origin */
+    protected $origin;
+
     protected $schemaRegistryUrl;
 
     abstract public function build();
@@ -46,19 +46,19 @@ abstract class KafkaBuilder
     public function __construct(
       array $brokers,
       string $schemaRegistryUrl,
+      Origin $origin,
       LoggerInterface $logger = null,
       Conf $config = null,
-      TopicConf $topicConfig = null,
       Registry $registry = null,
       KafkaSerializerInterface $serializer = null
     ) {
         $this->brokers = $brokers;
         $this->schemaRegistryUrl = $schemaRegistryUrl;
+        $this->origin = $origin;
         $this->registry = $registry ?? $this->createRegistry($schemaRegistryUrl);
         $this->serializer = $serializer ?? new AvroSerializer($this->registry, true, true);
         $this->logger = $logger ?? new Logger('kafka');
         $this->config = $config ?? new Conf();
-        $this->topicConfig = $topicConfig ?? new TopicConf();
         $this->config->set(ConfigOptions::BROKER_LIST, implode(',', $brokers));
         $this->config->setErrorCb([$this, 'defaultErrorCallback']);
     }

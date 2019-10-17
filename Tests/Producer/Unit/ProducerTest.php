@@ -3,6 +3,7 @@
 namespace Tests\Producer\Unit;
 
 use Error;
+use EventsPhp\Storyblocks\Common\Origin;
 use KafkaPhp\Producer\Producer;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use Mockery;
@@ -67,7 +68,7 @@ class ProducerTest extends BaseTestCase
         ]);
         $this->mockKafkaProducer->shouldReceive('newTopic')->andReturn($this->mockTopicProducer);
 
-        $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);
+        $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, Origin::VIDEOBLOCKS(), $this->mockLogger);
         $producer->produce($this->mockRecord, $this->topic);
     }
 
@@ -103,7 +104,7 @@ class ProducerTest extends BaseTestCase
             ->andReturn($this->mockTopicProducer);
 
         /** @var ProducerAlias $producer */
-        $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);
+        $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, Origin::VIDEOBLOCKS(), $this->mockLogger);
 
         $producer->produce(new FakeRecord(), $fakeTopic);
     }
@@ -140,7 +141,7 @@ class ProducerTest extends BaseTestCase
             ->with('invalid-fake-record', Mockery::type(TopicConf::class))
             ->andReturn($mockTopicProducer_FailedRecord);
 
-        $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, $this->mockLogger);
+        $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, Origin::VIDEOBLOCKS(), $this->mockLogger);
 
         $producer->produce(new FakeRecord());
     }

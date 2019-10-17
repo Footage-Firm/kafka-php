@@ -2,6 +2,7 @@
 
 namespace KafkaPhp\Producer;
 
+use EventsPhp\Storyblocks\Common\Origin;
 use EventsPhp\Util\EventFactory;
 use KafkaPhp\Common\TopicFormatter;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
@@ -11,7 +12,6 @@ use Psr\Log\LoggerInterface;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\TopicConf;
 use Throwable;
-
 
 class Producer
 {
@@ -28,15 +28,20 @@ class Producer
     /** @var int */
     private $timeoutMs;
 
+    /** @var Origin */
+    private $origin;
+
     public function __construct(
       KafkaProducer $kafkaClient,
       KafkaSerializerInterface $serializer,
+      Origin $origin,
       LoggerInterface $logger,
       ?int $timeoutMs = ProducerBuilder::DEFAULT_TIMEOUT_MS
     ) {
         $this->serializer = $serializer;
         $this->kafkaClient = $kafkaClient;
         $this->logger = $logger;
+        $this->origin = $origin;
         $this->timeoutMs = $timeoutMs;
     }
 
@@ -73,7 +78,7 @@ class Producer
 
     private function produceFailureRecord(BaseRecord $record, string $topic, string $errorMsg): void
     {
-        $failedRecord = EventFactory::failedRecord($topic, $record, $errorMsg);
+        $failedRecord = EventFactory::failedRecord($record, $topic, $this->origin, $errorMsg);
         $this->produce($failedRecord, TopicFormatter::producerFailureTopic($topic), false);
     }
 }

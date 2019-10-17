@@ -3,6 +3,7 @@
 
 namespace Tests\Consumer\Integration;
 
+use EventsPhp\Storyblocks\Common\Origin;
 use KafkaPhp\Consumer\ConsumerBuilder;
 use KafkaPhp\Producer\Producer;
 use KafkaPhp\Producer\ProducerBuilder;
@@ -28,7 +29,7 @@ class ConsumerSchemaEvolutionTest extends BaseTestCase
         //
         $topic = $this->faker()->word;
         print "Using topic $topic and group id $this->groupId\n";
-        $producer = (new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl))
+        $producer = (new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))
           ->shouldSendToFailureTopic(false)
           ->build();
 
@@ -39,7 +40,7 @@ class ConsumerSchemaEvolutionTest extends BaseTestCase
         // Create a consumer that listens to the topic with EvolvingRecord. This will first read the events produced
         // with the old schema, then the new schema, and no errors should be thrown.
         //
-        $consumer = (new ConsumerBuilder($this->brokerHosts, $this->groupId, $this->schemaRegistryUrl))
+        $consumer = (new ConsumerBuilder($this->brokerHosts, $this->groupId, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))
           ->setNumRetries(0)
           ->build();
 

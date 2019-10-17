@@ -4,6 +4,7 @@ namespace Test\Consumer\Integration;
 
 use Akamon\MockeryCallableMock\MockeryCallableMock;
 use EventsPhp\Storyblocks\Common\DebugRecord;
+use EventsPhp\Storyblocks\Common\Origin;
 use EventsPhp\Util\EventFactory;
 use KafkaPhp\Consumer\Consumer;
 use KafkaPhp\Consumer\ConsumerBuilder;
@@ -27,11 +28,11 @@ class ConsumerTest extends BaseTestCase
 
         $topic = $this->faker()->word;
 
-        $consumer = (new ConsumerBuilder($this->brokerHosts, $this->faker()->word, $this->schemaRegistryUrl))
+        $consumer = (new ConsumerBuilder($this->brokerHosts, $this->faker()->word, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))
             ->setNumRetries(0)
             ->build();
 
-        $producer = (new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl))
+        $producer = (new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))
             ->setNumRetries(0)
             ->build();
 
