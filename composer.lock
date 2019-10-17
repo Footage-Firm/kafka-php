@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "201fd8464763eb7e54e928eed8ea509e",
+    "content-hash": "4e15d510996b20efbd9528844751460d",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -1114,16 +1114,16 @@
         },
         {
             "name": "storyblocks/events-php",
-            "version": "15",
+            "version": "18",
             "source": {
                 "type": "git",
                 "url": "git@github.com:Footage-Firm/events-php.git",
-                "reference": "a5a87b332b34fcbdb6400256a61be514888b183a"
+                "reference": "88bf0a9e31c5757cc6688fd23d64c3ed75a45f07"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Footage-Firm/events-php/zipball/a5a87b332b34fcbdb6400256a61be514888b183a",
-                "reference": "a5a87b332b34fcbdb6400256a61be514888b183a",
+                "url": "https://api.github.com/repos/Footage-Firm/events-php/zipball/88bf0a9e31c5757cc6688fd23d64c3ed75a45f07",
+                "reference": "88bf0a9e31c5757cc6688fd23d64c3ed75a45f07",
                 "shasum": ""
             },
             "require": {
@@ -1143,10 +1143,10 @@
             ],
             "description": "Storyblocks events library for PHP.",
             "support": {
-                "source": "https://github.com/Footage-Firm/events-php/tree/15",
+                "source": "https://github.com/Footage-Firm/events-php/tree/18",
                 "issues": "https://github.com/Footage-Firm/events-php/issues"
             },
-            "time": "2019-10-02T17:26:17+00:00"
+            "time": "2019-10-15T20:02:30+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",

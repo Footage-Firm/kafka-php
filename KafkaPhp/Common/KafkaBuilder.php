@@ -7,12 +7,13 @@ use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
 use GuzzleHttp\Client;
-use KafkaPhp\Common\Exceptions\KafkaException;
 use KafkaPhp\Serializers\AvroSerializer;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
+use RdKafka\Consumer;
+use RdKafka\Producer;
 use RdKafka\TopicConf;
 
 abstract class KafkaBuilder
@@ -111,7 +112,12 @@ abstract class KafkaBuilder
         return new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
     }
 
-    public function defaultErrorCallback(\Rdkafka $kafka, int $err, string $reason)
+    /**
+     * @param Producer|Consumer $kafka
+     * @param int $err
+     * @param string $reason
+     */
+    public function defaultErrorCallback($kafka, int $err, string $reason)
     {
         throw new \RuntimeException($reason, $err);
     }
