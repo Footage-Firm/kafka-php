@@ -16,4 +16,8 @@ class ConfigOptions
     public const CERT_PATH = 'ssl.certificate.location';
 
     public const KEY_PATH = 'ssl.key.location';
+
+    public const RETRIES = 'retries';
+
+    public const RETRY_BACKOFF_MS = 'retry.backoff.ms';
 }
