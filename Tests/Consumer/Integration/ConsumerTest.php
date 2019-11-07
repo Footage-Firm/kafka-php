@@ -2,23 +2,11 @@
 
 namespace Test\Consumer\Integration;
 
-use Akamon\MockeryCallableMock\MockeryCallableMock;
 use EventsPhp\Storyblocks\Common\DebugRecord;
 use EventsPhp\Storyblocks\Common\Origin;
-use EventsPhp\Util\EventFactory;
-use KafkaPhp\Consumer\Consumer;
 use KafkaPhp\Consumer\ConsumerBuilder;
-use KafkaPhp\Consumer\RecordHandler;
-use KafkaPhp\Consumer\RecordProcessor;
 use KafkaPhp\Producer\ProducerBuilder;
-use KafkaPhp\Serializers\KafkaSerializerInterface;
-use Mockery;
-use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use RdKafka\KafkaConsumer;
-use RdKafka\Message;
 use Tests\BaseTestCase;
-use Tests\Util\Fakes\FakeRecord;
 
 class ConsumerTest extends BaseTestCase
 {
