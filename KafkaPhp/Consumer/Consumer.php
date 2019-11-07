@@ -79,12 +79,12 @@ class Consumer
     }
 
     /**
-     * @param  string[]|string  $topics
-     *
+     * @param  string[]|string $topics
+     * @return Consumer
      * @throws \RdKafka\Exception
      * @throws \Throwable
      */
-    public function consume($topics = []): void
+    public function consume($topics = []): Consumer
     {
         $topics = $this->determineTopics($topics);
 
@@ -97,6 +97,8 @@ class Consumer
         } finally {
             $this->kafkaClient->unsubscribe();
         }
+
+        return $this;
     }
 
     public function getMetadata(
