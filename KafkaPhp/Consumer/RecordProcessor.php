@@ -98,7 +98,7 @@ class RecordProcessor
 
     private function retry(BaseRecord $record, RecordHandler $handler, int $currentTry = 0): void
     {
-        $this->logger->debug('Retrying (current try: {currentTry}) record: {record}', ['record' => json_encode($record), 'currentTry' => $currentTry]);
+        $this->logger->debug('Retrying record.', ['record' => json_encode($record), 'currentTry' => $currentTry]);
         if ($currentTry >= $this->numRetries) {
             $this->handleFailure($record, $handler);
         } else {
@@ -113,7 +113,7 @@ class RecordProcessor
     private function sendToFailureTopic(BaseRecord $record): void
     {
         $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
-        $this->logger->warning('Sending record to failure topic ({topic}): {record}', ['record' => $record, 'topic' => $topic]);
+        $this->logger->warning('Sending record to failure topic.', ['record' => $record, 'topic' => $topic]);
         $this->failureProducer->produce($record, $topic);
     }
 
