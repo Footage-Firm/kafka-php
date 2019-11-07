@@ -157,6 +157,7 @@ class Consumer
                     } catch (Exception $rdkafkaException) {
                         if (preg_match("/Request timed out/", $rdkafkaException->getMessage())) {
                             // retry once on timeout
+                            $this->logger->warning("Retrying commit after timeout.", ["message" => $message]);
                             $this->kafkaClient->commit($message);
                         }
                     }
