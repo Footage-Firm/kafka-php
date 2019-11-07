@@ -9,8 +9,9 @@ use KafkaPhp\Consumer\RecordHandler;
 use KafkaPhp\Consumer\RecordProcessor;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use Mockery;
-use PHPUnit\Framework\TestCase;
+use Mockery\Mock;
 use Psr\Log\LoggerInterface;
+use RdKafka\Exception;
 use RdKafka\KafkaConsumer;
 use RdKafka\Message;
 use Tests\BaseTestCase;
@@ -19,22 +20,28 @@ use Tests\Util\Fakes\FakeRecord;
 class ConsumerTest extends BaseTestCase
 {
 
+    /** @var Mock|RecordProcessor */
     private $mockRecordProcessor;
 
+    /** @var Mock|LoggerInterface */
     private $mockLogger;
 
+    /** @var Mock|KafkaConsumer*/
     private $mockKafkaClient;
 
-    private $mockRecord;
-
+    /** @var Mock|callable */
     private $mockSuccessFn;
 
+    /** @var Mock|callable */
     private $mockFailureFn;
 
+    /** @var Mock|callable */
     private $mockMessageHandler;
 
+    /** @var Mock|KafkaSerializerInterface */
     private $mockSerializer;
 
+    /** @var Consumer */
     private $consumer;
 
     public function setUp(): void
@@ -65,8 +72,9 @@ class ConsumerTest extends BaseTestCase
           ->shouldReceive('subscribe')
           ->with(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
 
-        $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
-        $this->consumer->wait();
+        $this->consumer
+            ->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn)
+            ->wait();
 
     }
 
@@ -85,8 +93,7 @@ class ConsumerTest extends BaseTestCase
           ->andReturn([FakeRecord::class => $this->mockMessageHandler]);
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
-        $this->consumer->consume($originalTopic);
-        $this->consumer->wait();
+        $this->consumer->consume($originalTopic)->wait();
 
     }
 
@@ -108,8 +115,7 @@ class ConsumerTest extends BaseTestCase
         $this->mockRecordProcessor->shouldReceive('getHandlers')->andReturn([$this->mockMessageHandler]);
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
-        $this->consumer->consume(null);
-        $this->consumer->wait();
+        $this->consumer->consume(null)->wait();
 
         // If the consumer lifetime didn't work we'll never reach this assertion.
         $this->assertTrue(true);
@@ -118,22 +124,13 @@ class ConsumerTest extends BaseTestCase
     public function testHandlesMessageFromKafka_NoError()
     {
         $this->expectNotToPerformAssertions();
+        $this->mockWorkingConsumer();
 
-        $fakePayload = '';
-        $this->mockKafkaClientWithMessage(RD_KAFKA_RESP_ERR_NO_ERROR, '', $fakePayload);
         $this->mockKafkaClient->shouldReceive('commit');
-        $this->mockSerializer->shouldReceive('deserialize')->with($fakePayload)->andReturn([]);
-
-        $this->mockRecordProcessor->shouldReceive('subscribe')->with(FakeRecord::class, $this->mockSuccessFn, null);
-        $this->mockRecordProcessor->shouldReceive('process')->atLeast()->times(1)->with([]);
-        $this->mockRecordProcessor->shouldReceive('getHandlers')
-          ->andReturn([FakeRecord::class => $this->mockMessageHandler]);
-
         $this->mockLogger->shouldNotHaveBeenCalled();
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
-        $this->consumer->consume();
-        $this->consumer->wait();
+        $this->consumer->consume()->wait();
     }
 
     public function testHandlesMessageFromKafka_TimeoutError()
@@ -152,8 +149,7 @@ class ConsumerTest extends BaseTestCase
         $this->mockLogger->shouldNotHaveBeenCalled();
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
-        $this->consumer->consume();
-        $this->consumer->wait();
+        $this->consumer->consume()->wait();
 
     }
 
@@ -193,9 +189,37 @@ class ConsumerTest extends BaseTestCase
         $this->mockLogger->shouldReceive('info')->with('Kafka message error: ' . $errStr);
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
-        $this->consumer->consume();
-        $this->consumer->wait();
+        $this->consumer->consume()->wait();
 
+    }
+
+    public function testRetryCommitOnTimeout()
+    {
+        $this->expectNotToPerformAssertions();
+
+        $this->mockWorkingConsumer();
+
+        $this->mockKafkaClient->shouldReceive('commit')
+            ->once()
+            ->andThrow(new Exception('Request timed out'))
+            ->once()
+            ->andReturn();
+
+        $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
+        $this->consumer->consume()->wait();
+
+    }
+
+    private function mockWorkingConsumer() {
+        $fakePayload = "fake";
+        $fakeDeserialized = [];
+        $this->mockKafkaClientWithMessage(RD_KAFKA_RESP_ERR_NO_ERROR, '', $fakePayload);
+        $this->mockSerializer->shouldReceive('deserialize')->with($fakePayload)->andReturn($fakeDeserialized);
+
+        $this->mockRecordProcessor->shouldReceive('subscribe')->with(FakeRecord::class, $this->mockSuccessFn, null);
+        $this->mockRecordProcessor->shouldReceive('process')->times(1)->with($fakeDeserialized);
+        $this->mockRecordProcessor->shouldReceive('getHandlers')
+            ->andReturn([FakeRecord::class => $this->mockMessageHandler]);
     }
 
     private function mockKafkaClientWithMessage($msgErr, $errStr = '', $msgPayload = '', $topic = 'fake-record')
