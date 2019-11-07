@@ -55,11 +55,11 @@ class RecordProcessor
 
         if ($handler) {
             $record = $this->getRecordFromDecoded($decoded[$key], $handler);
-            $this->logger->debug('Handling record.', ['record' => json_encode($record)]);
+            $this->logger->debug('Handling record: {record}', ['record' => json_encode($record)]);
             try {
                 $handler->success($record);
             } catch (Throwable $t) {
-                $this->logger->error('Exception thrown in handler.', ['error' => $t, 'record' => json_encode($record)]);
+                $this->logger->error('Exception thrown in handler!\nerror:{error}\nrecord:{record}', ['error' => $t, 'record' => json_encode($record)]);
                 $this->retry($record, $handler);
             }
         }
