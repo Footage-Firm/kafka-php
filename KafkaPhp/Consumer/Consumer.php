@@ -2,12 +2,14 @@
 
 namespace KafkaPhp\Consumer;
 
+use KafkaPhp\Common\Exceptions\KafkaException;
 use KafkaPhp\Consumer\Exceptions\ConsumerConfigurationException;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use KafkaPhp\Traits\RecordFormatter;
 use KafkaPhp\Traits\ShortClassName;
 use Carbon\Carbon;
 use Psr\Log\LoggerInterface;
+use RdKafka\Exception;
 use RdKafka\KafkaConsumer;
 use RdKafka\KafkaConsumerTopic;
 use RdKafka\Metadata;
@@ -150,7 +152,14 @@ class Consumer
                     $this->logger->debug('Processing message.', ['offset' => $message->offset]);
                     $record = $this->serializer->deserialize($message->payload);
                     $this->recordProcessor->process($record);
-                    $this->kafkaClient->commit($message);
+                    try {
+                        $this->kafkaClient->commit($message);
+                    } catch (Exception $rdkafkaException) {
+                        if (preg_match("/Request timed out/", $rdkafkaException->getMessage())) {
+                            // retry once on timeout
+                            $this->kafkaClient->commit($message);
+                        }
+                    }
                     $this->lastMessageTime = Carbon::now();
                     break;
                 case RD_KAFKA_RESP_ERR__TIMED_OUT:

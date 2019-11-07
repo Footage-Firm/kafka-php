@@ -199,7 +199,11 @@ class ConsumerTest extends BaseTestCase
 
         $this->mockWorkingConsumer();
 
-        $this->mockKafkaClient->shouldReceive('commit')->andThrow(new Exception('timeout!'));
+        $this->mockKafkaClient->shouldReceive('commit')
+            ->once()
+            ->andThrow(new Exception('Request timed out'))
+            ->once()
+            ->andReturn();
 
         $this->consumer->subscribe(FakeRecord::class, $this->mockSuccessFn);
         $this->consumer->consume()->wait();
