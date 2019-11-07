@@ -149,7 +149,7 @@ class Consumer
 
             switch ($message->err) {
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
-                    $this->logger->info('Processing message.', ['message' => $message]);
+                    $this->logger->info('Processing message.', ['topic' => $message->topic_name, 'partition' => $message->partition, 'offset' => $message->offset]);
                     $record = $this->serializer->deserialize($message->payload);
                     $this->recordProcessor->process($record);
                     try {
@@ -157,7 +157,7 @@ class Consumer
                     } catch (Exception $rdkafkaException) {
                         if (preg_match("/Request timed out/", $rdkafkaException->getMessage())) {
                             // retry once on timeout
-                            $this->logger->warning("Retrying commit after timeout.", ["message" => $message]);
+                            $this->logger->warning("Retrying commit after timeout.", ['topic' => $message->topic_name, 'partition' => $message->partition, 'offset' => $message->offset]);
                             $this->kafkaClient->commit($message);
                         }
                     }
