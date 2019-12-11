@@ -13,3 +13,4 @@ certs
 # Test output
 .phpunit.result.cache
 test-reports
+xdebug.log

@@ -26,7 +26,7 @@ class ConsumerTest extends BaseTestCase
 
         $record = new DebugRecord();
         $record->setPayload("testConsume");
-        $producer->produce($record, $topic, false);
+        $producer->produce($record, null, $topic, false);
 
         $processed = false;
 
