@@ -96,6 +96,8 @@ class Consumer
         } catch (Throwable $throwable) {
             $this->logger->error($throwable->getMessage());
             throw $throwable;
+        } finally {
+            $this->kafkaClient->unsubscribe();
         }
 
         return $this;
