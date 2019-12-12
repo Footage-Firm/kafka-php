@@ -114,7 +114,7 @@ class RecordProcessor
     {
         $topic = TopicFormatter::consumerFailureTopic($record, $this->groupId);
         $this->logger->warning('Sending record to failure topic.', ['record' => $record, 'topic' => $topic]);
-        $this->failureProducer->produce($record, $topic);
+        $this->failureProducer->produce($record, null, $topic);
     }
 
     private function getRecordFromDecoded(array $decodedValue, RecordHandler $handler): BaseRecord

@@ -9,6 +9,7 @@ use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use EventsPhp\BaseRecord;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use RdKafka\Producer as KafkaProducer;
 use RdKafka\TopicConf;
 use Throwable;
@@ -45,9 +46,21 @@ class Producer
         $this->timeoutMs = $timeoutMs;
     }
 
-    public function produce(BaseRecord $record, string $topic = null, bool $produceFailureRecords = true): void
+    /**
+     * Produce a record. If no key is provided, a uuid will be generated and sent as the key.
+     * @param BaseRecord $record
+     * @param string|null $key
+     * @param string|null $topic
+     * @param bool $produceFailureRecords
+     * @throws SchemaRegistryException
+     * @throws Throwable
+     */
+    public function produce(BaseRecord $record, string $key = null, string $topic = null, bool $produceFailureRecords = true): void
     {
         $topic = $topic ?? TopicFormatter::topicFromRecord($record);
+
+        // To ensure every message is produced with a key, generate a uuid if one is not provided.
+        $key = $key ?? Uuid::uuid4()->toString();
 
         $topicConf = new TopicConf();
         $topicConf->set('message.timeout.ms', $this->timeoutMs);
@@ -59,7 +72,7 @@ class Producer
              * RD_KAFKA_PARTITION_UA means kafka will automatically decide to which partition the record will be produced.
              * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
              */
-            $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord);
+            $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord, $key);
         } catch (SchemaRegistryException $e) {
             // Propagate a schema registry error and do not retry.
             throw $e;
@@ -79,6 +92,6 @@ class Producer
     private function produceFailureRecord(BaseRecord $record, string $topic, string $errorMsg): void
     {
         $failedRecord = EventFactory::failedRecord($record, $topic, $this->origin, $errorMsg);
-        $this->produce($failedRecord, TopicFormatter::producerFailureTopic($topic), false);
+        $this->produce($failedRecord, null, TopicFormatter::producerFailureTopic($topic), false);
     }
 }

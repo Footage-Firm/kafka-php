@@ -37,7 +37,7 @@ class ConsumerFailureTest extends BaseTestCase
                 $consumer->disconnect();
             });
 
-        $producer->produce(Factory::debugRecord($this->faker()->word), $this->topic);
+        $producer->produce(Factory::debugRecord($this->faker()->word), null, $this->topic);
 
         $consumer->consume($this->topic);
         $consumer->wait();

@@ -68,7 +68,7 @@ class ConsumerSchemaEvolutionTest extends BaseTestCase
         {
             $fakeRecord = new EvolvingRecord();
             $fakeRecord->id = $i;
-            $producer->produce($fakeRecord, $topic);
+            $producer->produce($fakeRecord, null, $topic);
             return $fakeRecord;
         }, range(0, 4)
         );
@@ -82,7 +82,7 @@ class ConsumerSchemaEvolutionTest extends BaseTestCase
             $fakeRecord->schema = $this->getUpdatedSchema();
             $fakeRecord->id = $i;
             $fakeRecord->newField = 'NEW FIELD';
-            $producer->produce($fakeRecord, $topic);
+            $producer->produce($fakeRecord, null, $topic);
             return $fakeRecord;
         }, range(5, 9)
         );

@@ -19,9 +19,10 @@ use Tests\Util\Fakes\FakeRecord;
 class ProducerTest extends BaseTestCase
 {
 
-    /** @var MockInterface|KafkaProducer */
+    /** @var KafkaProducer|MockInterface */
     private $mockKafkaProducer;
 
+    /** @var KafkaSerializerInterface|MockInterface */
     private $mockSerializer;
 
     private $mockLogger;
@@ -65,11 +66,13 @@ class ProducerTest extends BaseTestCase
           RD_KAFKA_PARTITION_UA,
           0,
           $this->fakeEncodedRecord,
+          Mockery::type('string')
         ]);
+
         $this->mockKafkaProducer->shouldReceive('newTopic')->andReturn($this->mockTopicProducer);
 
         $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, Origin::VIDEOBLOCKS(), $this->mockLogger);
-        $producer->produce($this->mockRecord, $this->topic);
+        $producer->produce($this->mockRecord, null, $this->topic);
     }
 
     public function testCorrectTopicIsProduced_NoneProvided()
@@ -80,6 +83,7 @@ class ProducerTest extends BaseTestCase
           RD_KAFKA_PARTITION_UA,
           0,
           $this->fakeEncodedRecord,
+          Mockery::type('string')
         ]);
         $this->mockKafkaProducer->shouldReceive('newTopic')
           ->with('fake-record')
@@ -96,6 +100,7 @@ class ProducerTest extends BaseTestCase
             RD_KAFKA_PARTITION_UA,
             0,
             $this->fakeEncodedRecord,
+            Mockery::type('string')
         ]);
 
         $this->mockKafkaProducer->shouldReceive('newTopic')
@@ -103,10 +108,9 @@ class ProducerTest extends BaseTestCase
             ->once()
             ->andReturn($this->mockTopicProducer);
 
-        /** @var ProducerAlias $producer */
         $producer = new Producer($this->mockKafkaProducer, $this->mockSerializer, Origin::VIDEOBLOCKS(), $this->mockLogger);
 
-        $producer->produce(new FakeRecord(), $fakeTopic);
+        $producer->produce(new FakeRecord(), null, $fakeTopic);
     }
 
     public function testExceptionThrownAndFailureProducedWhenInitialProductionFails()
@@ -123,7 +127,7 @@ class ProducerTest extends BaseTestCase
 
         // Throw an error when trying to produce initially
         $this->mockTopicProducer->shouldReceive('produce')
-            ->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord])
+            ->withArgs([RD_KAFKA_PARTITION_UA, 0, $this->fakeEncodedRecord, Mockery::type('string')])
             ->once()
             ->andThrow(Error::class);
 
@@ -135,6 +139,7 @@ class ProducerTest extends BaseTestCase
                 RD_KAFKA_PARTITION_UA,
                 0,
                 $this->fakeEncodedRecord,
+                Mockery::type('string')
             ]);
 
         $this->mockKafkaProducer->shouldReceive('newTopic')

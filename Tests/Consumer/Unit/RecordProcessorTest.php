@@ -139,6 +139,7 @@ class RecordProcessorTest extends BaseTestCase
           ->once()
           ->with(
             IsEqual::equalTo($this->fakeRecord),
+            null,
             $topic
           );
 
