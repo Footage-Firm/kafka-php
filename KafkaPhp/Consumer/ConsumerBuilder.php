@@ -67,7 +67,7 @@ class ConsumerBuilder extends KafkaBuilder
 
         return new Consumer(
           $kafkaConsumer,
-          $this->serializer,
+          $this->createSerializer(),
           $this->logger,
           $recordProcessor,
           $this->idleTimeoutMs,
