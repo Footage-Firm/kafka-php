@@ -33,9 +33,6 @@ abstract class KafkaBuilder
 
     protected $shouldSendToFailureTopic = true;
 
-    /** @var Registry */
-    protected $registry;
-
     /** @var Redis */
     protected $redis;
 
@@ -104,13 +101,12 @@ abstract class KafkaBuilder
     {
         $this->redis = new Redis();
         $this->redis->connect($host, $port);
-        $this->registry = $this->createRegistry();
         return $this;
     }
 
     protected function createSerializer(): KafkaSerializerInterface
     {
-        $registry = $this->registry ?? $this->createRegistry();
+        $registry = $this->createRegistry();
         return $this->serializer ?? new AvroSerializer($registry, true, true);
     }
 

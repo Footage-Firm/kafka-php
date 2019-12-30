@@ -47,11 +47,9 @@ class ConsumerBuilder extends KafkaBuilder
       string $schemaRegistryUrl,
       Origin $origin,
       LoggerInterface $logger = null,
-      Conf $config = null,
-      Registry $registry = null,
-      KafkaSerializerInterface $serializer = null
+      Conf $config = null
     ) {
-        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config, $registry, $serializer);
+        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config);
         $this->groupId = $groupId;
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
         $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
