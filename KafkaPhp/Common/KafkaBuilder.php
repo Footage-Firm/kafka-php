@@ -100,9 +100,10 @@ abstract class KafkaBuilder
         return $this;
     }
 
-    public function useRedisSchemaCache(Redis $redis)
+    public function setRedisSchemaCache(string $host, int $port = 6379)
     {
-        $this->redis = $redis;
+        $this->redis = new Redis();
+        $this->redis->connect($host, $port);
         $this->registry = $this->createRegistry();
         return $this;
     }
