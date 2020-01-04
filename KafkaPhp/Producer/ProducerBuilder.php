@@ -40,7 +40,7 @@ class ProducerBuilder extends KafkaBuilder
     public function build(): Producer
     {
         $kafkaProducer = new KafkaProducer($this->config);
-        return new Producer($kafkaProducer, $this->serializer, $this->origin, $this->logger, $this->timeoutMs);
+        return new Producer($kafkaProducer, $this->createSerializer(), $this->origin, $this->logger, $this->timeoutMs);
     }
 
     public function setTimeoutMs(int $timeoutMs): self

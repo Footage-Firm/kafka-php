@@ -2,9 +2,11 @@
 
 namespace KafkaPhp\Common;
 
+use Doctrine\Common\Cache\RedisCache;
 use EventsPhp\Storyblocks\Common\Origin;
 use FlixTech\SchemaRegistryApi\Registry;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
+use FlixTech\SchemaRegistryApi\Registry\Cache\DoctrineCacheAdapter;
 use FlixTech\SchemaRegistryApi\Registry\CachedRegistry;
 use FlixTech\SchemaRegistryApi\Registry\PromisingRegistry;
 use GuzzleHttp\Client;
@@ -15,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\Consumer;
 use RdKafka\Producer;
+use Redis;
 
 abstract class KafkaBuilder
 {
@@ -30,8 +33,8 @@ abstract class KafkaBuilder
 
     protected $shouldSendToFailureTopic = true;
 
-    /** @var Registry */
-    protected $registry;
+    /** @var Redis */
+    protected $redis;
 
     /** @var string[] */
     protected $brokers;
@@ -48,15 +51,11 @@ abstract class KafkaBuilder
       string $schemaRegistryUrl,
       Origin $origin,
       LoggerInterface $logger = null,
-      Conf $config = null,
-      Registry $registry = null,
-      KafkaSerializerInterface $serializer = null
+      Conf $config = null
     ) {
         $this->brokers = $brokers;
         $this->schemaRegistryUrl = $schemaRegistryUrl;
         $this->origin = $origin;
-        $this->registry = $registry ?? $this->createRegistry($schemaRegistryUrl);
-        $this->serializer = $serializer ?? new AvroSerializer($this->registry, true, true);
         $this->logger = $logger ?? new Logger('kafka');
         $this->config = $config ?? new Conf();
         $this->config->set(ConfigOptions::BROKER_LIST, implode(',', $brokers));
@@ -98,18 +97,41 @@ abstract class KafkaBuilder
         return $this;
     }
 
-    private function createRegistry(string $schemaRegistryUrl): Registry
+    public function setRedisSchemaCache(string $host, int $port = 6379)
     {
-        $config = ['base_uri' => $schemaRegistryUrl];
+        $this->redis = new Redis();
+        $this->redis->connect($host, $port);
+        return $this;
+    }
 
-        $user = parse_url($schemaRegistryUrl, PHP_URL_USER);
-        $pass = parse_url($schemaRegistryUrl, PHP_URL_PASS);
+    protected function createSerializer(): KafkaSerializerInterface
+    {
+        $registry = $this->createRegistry();
+        return $this->serializer ?? new AvroSerializer($registry, true, true);
+    }
+
+    private function createRegistry(): Registry
+    {
+        $config = ['base_uri' => $this->schemaRegistryUrl];
+
+        $user = parse_url($this->schemaRegistryUrl, PHP_URL_USER);
+        $pass = parse_url($this->schemaRegistryUrl, PHP_URL_PASS);
 
         if ($user || $pass) {
             $config['auth'] = [$user, $pass];
         }
         $client = new Client($config);
-        return new CachedRegistry(new PromisingRegistry($client), new AvroObjectCacheAdapter());
+
+        $cacheAdapter = null;
+        if ($this->redis) {
+            $cache = new RedisCache();
+            $cache->setRedis($this->redis);
+            $cacheAdapter = new DoctrineCacheAdapter($cache);
+        } else {
+            $cacheAdapter = new AvroObjectCacheAdapter();
+        }
+
+        return new CachedRegistry(new PromisingRegistry($client), $cacheAdapter);
     }
 
     /**

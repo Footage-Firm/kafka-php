@@ -39,4 +39,13 @@ class ProducerTest extends BaseTestCase
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());
     }
+
+    public function testWithRedis()
+    {
+        $this->expectNotToPerformAssertions();
+        $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS());
+        $builder->setRedisSchemaCache($this->redisHost);
+        $producer = $builder->build();
+        $producer->produce(FakeFactory::fakeRecord());
+    }
 }

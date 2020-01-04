@@ -15,7 +15,7 @@ class TopicFormatterTest extends BaseTestCase
         self::assertEquals('fake-record', $topic);
     }
 
-    public function testTopiFromRecordName()
+    public function testTopicFromRecordName()
     {
         $fakeRecordName = '';
         $words = $this->faker()->words(3);

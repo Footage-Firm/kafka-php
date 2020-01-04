@@ -4,6 +4,7 @@ jobs:
     working_directory: ~/kafka-php
     docker:
       - image: videoblocks/docker-php
+      - image: redis:2.8
       - image: confluentinc/cp-zookeeper:5.1.2
         environment:
           ZOOKEEPER_CLIENT_PORT: 2181
