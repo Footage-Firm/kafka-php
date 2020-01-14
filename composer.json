@@ -49,6 +49,7 @@
     }
   },
   "provide": {
-    "ext-rdkafka": "*"
+    "ext-rdkafka": "*",
+    "ext-redis": "*"
   }
 }
