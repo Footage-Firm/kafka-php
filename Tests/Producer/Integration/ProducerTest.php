@@ -5,6 +5,7 @@ namespace Test\Producer\Integration;
 use EventsPhp\Storyblocks\Common\Origin;
 use KafkaPhp\Producer\ProducerBuilder;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
+use Predis\Client;
 use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
@@ -44,7 +45,8 @@ class ProducerTest extends BaseTestCase
     {
         $this->expectNotToPerformAssertions();
         $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS());
-        $builder->setRedisSchemaCache($this->redisHost);
+        $predis = new Client(['host' => $this->redisHost]);
+        $builder->setPredisCache($predis);
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());
     }

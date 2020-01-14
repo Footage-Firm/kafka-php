@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a9a8dc92bc5be9eb6e9db86f8bfd1ede",
+    "content-hash": "c9aee7c6bc0dc1a2e983c5f1aa777b94",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -924,6 +924,56 @@
             "time": "2018-07-02T15:55:56+00:00"
         },
         {
+            "name": "predis/predis",
+            "version": "v1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nrk/predis.git",
+                "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nrk/predis/zipball/f0210e38881631afeafb56ab43405a92cafd9fd1",
+                "reference": "f0210e38881631afeafb56ab43405a92cafd9fd1",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.9"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~4.8"
+            },
+            "suggest": {
+                "ext-curl": "Allows access to Webdis when paired with phpiredis",
+                "ext-phpiredis": "Allows faster serialization and deserialization of the Redis protocol"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Predis\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Daniele Alessandri",
+                    "email": "suppakilla@gmail.com",
+                    "homepage": "http://clorophilla.net"
+                }
+            ],
+            "description": "Flexible and feature-complete Redis client for PHP and HHVM",
+            "homepage": "http://github.com/nrk/predis",
+            "keywords": [
+                "nosql",
+                "predis",
+                "redis"
+            ],
+            "time": "2016-06-16T16:22:20+00:00"
+        },
+        {
             "name": "psr/http-message",
             "version": "1.0.1",
             "source": {
@@ -1206,16 +1256,16 @@
         },
         {
             "name": "storyblocks/events-php",
-            "version": "26",
+            "version": "44",
             "source": {
                 "type": "git",
                 "url": "git@github.com:Footage-Firm/events-php.git",
-                "reference": "4958090bbe34a0678e398614f310047e67f9c6d9"
+                "reference": "efa38cf832258c5a83a97a5dc48031580b95f722"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Footage-Firm/events-php/zipball/4958090bbe34a0678e398614f310047e67f9c6d9",
-                "reference": "4958090bbe34a0678e398614f310047e67f9c6d9",
+                "url": "https://api.github.com/repos/Footage-Firm/events-php/zipball/efa38cf832258c5a83a97a5dc48031580b95f722",
+                "reference": "efa38cf832258c5a83a97a5dc48031580b95f722",
                 "shasum": ""
             },
             "require": {
@@ -1235,10 +1285,10 @@
             ],
             "description": "Storyblocks events library for PHP.",
             "support": {
-                "source": "https://github.com/Footage-Firm/events-php/tree/26",
+                "source": "https://github.com/Footage-Firm/events-php/tree/44",
                 "issues": "https://github.com/Footage-Firm/events-php/issues"
             },
-            "time": "2019-12-19T18:37:17+00:00"
+            "time": "2020-01-14T19:24:37+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -2499,16 +2549,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "8.5.1",
+            "version": "8.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "7870c78da3c5e4883eaef36ae47853ebb3cb86f2"
+                "reference": "018b6ac3c8ab20916db85fa91bf6465acb64d1e0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/7870c78da3c5e4883eaef36ae47853ebb3cb86f2",
-                "reference": "7870c78da3c5e4883eaef36ae47853ebb3cb86f2",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/018b6ac3c8ab20916db85fa91bf6465acb64d1e0",
+                "reference": "018b6ac3c8ab20916db85fa91bf6465acb64d1e0",
                 "shasum": ""
             },
             "require": {
@@ -2578,7 +2628,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2019-12-25T14:49:39+00:00"
+            "time": "2020-01-08T08:49:49+00:00"
         },
         {
             "name": "sebastian/code-unit-reverse-lookup",
@@ -3349,8 +3399,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "ext-json": "*",
-        "ext-redis": "*"
+        "ext-json": "*"
     },
     "platform-dev": []
 }

@@ -2,7 +2,7 @@
 
 namespace KafkaPhp\Common;
 
-use Doctrine\Common\Cache\RedisCache;
+use Doctrine\Common\Cache\PredisCache;
 use EventsPhp\Storyblocks\Common\Origin;
 use FlixTech\SchemaRegistryApi\Registry;
 use FlixTech\SchemaRegistryApi\Registry\Cache\AvroObjectCacheAdapter;
@@ -17,7 +17,6 @@ use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\Consumer;
 use RdKafka\Producer;
-use Redis;
 
 abstract class KafkaBuilder
 {
@@ -33,8 +32,8 @@ abstract class KafkaBuilder
 
     protected $shouldSendToFailureTopic = true;
 
-    /** @var Redis */
-    protected $redis;
+    /** @var \Predis\Client */
+    protected $predis;
 
     /** @var string[] */
     protected $brokers;
@@ -97,10 +96,9 @@ abstract class KafkaBuilder
         return $this;
     }
 
-    public function setRedisSchemaCache(string $host, int $port = 6379)
+    public function setPredisCache(\Predis\Client $predis)
     {
-        $this->redis = new Redis();
-        $this->redis->connect($host, $port);
+        $this->predis = $predis;
         return $this;
     }
 
@@ -123,9 +121,8 @@ abstract class KafkaBuilder
         $client = new Client($config);
 
         $cacheAdapter = null;
-        if ($this->redis) {
-            $cache = new RedisCache();
-            $cache->setRedis($this->redis);
+        if ($this->predis) {
+            $cache = new PredisCache($this->predis);
             $cacheAdapter = new DoctrineCacheAdapter($cache);
         } else {
             $cacheAdapter = new AvroObjectCacheAdapter();
