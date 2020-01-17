@@ -14,4 +14,12 @@ class FakeFactory
         $fake->setId($id);
         return $fake;
     }
+
+    public static function invalidRecord(): FakeRecord
+    {
+        $fake = new FakeRecord();
+        $fake->setId(Factory::create()->word);
+        return $fake;
+    }
+
 }

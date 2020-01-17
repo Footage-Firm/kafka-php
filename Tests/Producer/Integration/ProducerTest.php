@@ -2,13 +2,16 @@
 
 namespace Test\Producer\Integration;
 
+use EventsPhp\Storyblocks\Common\FailedRecord;
 use EventsPhp\Storyblocks\Common\Origin;
+use KafkaPhp\Consumer\ConsumerBuilder;
 use KafkaPhp\Producer\ProducerBuilder;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use Predis\Client;
 use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
+use Tests\Utils\Factory;
 
 class ProducerTest extends BaseTestCase
 {
@@ -49,5 +52,21 @@ class ProducerTest extends BaseTestCase
         $builder->setPredisCache($predis);
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());
+    }
+
+    public function testInvalidSchema()
+    {
+        $this->expectNotToPerformAssertions();
+        $producer = (new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))->build();
+        $producer->produce(FakeFactory::invalidRecord());
+
+        $invalidRecord = null;
+        $consumer = (new ConsumerBuilder($this->brokerHosts, 'test-consumer', $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))->build();
+        $consumer->subscribe(FailedRecord::class, function($record) use ($consumer, &$invalidRecord) {
+            $invalidRecord = $record;
+            $consumer->disconnect();
+        });
+
+        $this->assertNotNull($invalidRecord);
     }
 }
