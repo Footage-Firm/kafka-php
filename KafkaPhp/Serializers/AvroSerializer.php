@@ -3,8 +3,11 @@
 namespace KafkaPhp\Serializers;
 
 use AvroSchema;
+use AvroSchemaParseException;
 use EventsPhp\BaseRecord;
+use FlixTech\AvroSerializer\Objects\AvroSerializerException;
 use FlixTech\AvroSerializer\Objects\Exceptions\AvroDecodingException;
+use FlixTech\AvroSerializer\Objects\Exceptions\AvroEncodingException;
 use FlixTech\AvroSerializer\Objects\RecordSerializer;
 use FlixTech\SchemaRegistryApi\Registry;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -35,6 +38,13 @@ class AvroSerializer implements KafkaSerializerInterface
         );
     }
 
+    /**
+     * @param BaseRecord $record
+     * @return string
+     * @throws SchemaRegistryException
+     * @throws AvroEncodingException
+     * @throws AvroSchemaParseException
+     */
     public function serialize(BaseRecord $record): string
     {
         $schema = AvroSchema::parse($record->schema());
@@ -43,7 +53,9 @@ class AvroSerializer implements KafkaSerializerInterface
 
         try {
             return $this->serializer->encodeRecord($name . '-value', $schema, $data);
-        } catch (\RuntimeException $e) {
+        } catch (AvroEncodingException $e) {
+            throw $e;
+        } catch (\Exception | \FlixTech\SchemaRegistryApi\Exception\SchemaRegistryException $e) {
             throw new SchemaRegistryException('Error encoding record.', null, $e);
         }
     }

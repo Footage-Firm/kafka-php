@@ -2,26 +2,20 @@
 
 namespace Test\Producer\Integration;
 
+use EventsPhp\Storyblocks\Common\FailedRecord;
 use EventsPhp\Storyblocks\Common\Origin;
+use FlixTech\AvroSerializer\Objects\Exceptions\AvroEncodingException;
+use KafkaPhp\Consumer\ConsumerBuilder;
 use KafkaPhp\Producer\ProducerBuilder;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use Predis\Client;
 use Tests\BaseTestCase;
 use Tests\Util\Fakes\FakeFactory;
 use Tests\Util\Fakes\FakeRecord;
+use Tests\Utils\Factory;
 
 class ProducerTest extends BaseTestCase
 {
-
-    public function testExceptionThrown_WhenFailsToEncode()
-    {
-        $this->expectException(SchemaRegistryException::class);
-        $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS());
-        $producer = $builder->build();
-        $record = new FakeRecord();
-        $record->setId('test');
-        $producer->produce($record);
-    }
 
     public function testExceptionThrown_WhenSchemaRegUrlIsWrong()
     {
@@ -49,5 +43,26 @@ class ProducerTest extends BaseTestCase
         $builder->setPredisCache($predis);
         $producer = $builder->build();
         $producer->produce(FakeFactory::fakeRecord());
+    }
+
+    public function testInvalidSchema()
+    {
+        $producer = (new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))->build();
+
+        try {
+            $producer->produce(FakeFactory::invalidRecord());
+        } catch (AvroEncodingException $e) {
+            // pass
+        }
+
+        $invalidRecord = null;
+        $consumer = (new ConsumerBuilder($this->brokerHosts, 'test-consumer', $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))->build();
+        $consumer->subscribe(FailedRecord::class, function($record) use ($consumer, &$invalidRecord) {
+            $invalidRecord = $record;
+            $consumer->disconnect();
+        });
+        $consumer->consume('invalid-fake-record');
+
+        $this->assertNotNull($invalidRecord);
     }
 }
