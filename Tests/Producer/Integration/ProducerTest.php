@@ -18,16 +18,8 @@ class ProducerTest extends BaseTestCase
 
     public function testProduce()
     {
+        $this->expectNotToPerformAssertions();
         $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::STORYBLOCKS());
-
-        $builder
-            ->enableDebug()
-            ->setNumRetries(0)
-            ->shouldSendToFailureTopic(false)
-            ->setKafkaErrorCallback(function ($error) {
-                var_dump($error);
-            });
-
         $producer = $builder->build();
         $producer->produce(Factory::debugRecord('[kafka-php test] ' . $this->faker()->randomNumber(4)));
     }
