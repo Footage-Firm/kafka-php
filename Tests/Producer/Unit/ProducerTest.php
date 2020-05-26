@@ -49,7 +49,7 @@ class ProducerTest extends BaseTestCase
         $this->mockRecord = FakeFactory::fakeRecord();
         $this->mockTopicProducer = Mockery::mock(ProducerTopic::class);
 
-        $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);
+        $this->mockSerializer->shouldReceive('serialize')->andReturn([$this->fakeEncodedRecord, 'key']);
     }
 
     protected function tearDown(): void
