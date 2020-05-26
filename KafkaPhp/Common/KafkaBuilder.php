@@ -71,6 +71,16 @@ abstract class KafkaBuilder
         return $this;
     }
 
+    public function setSaslData(string $username, string $password, string $mechanism = 'PLAIN'): self
+    {
+        $this->config->set(ConfigOptions::SECURITY_PROTOCOL, 'sasl_ssl');
+        $this->config->set(ConfigOptions::SASL_MECHANISM, $mechanism);
+        $this->config->set(ConfigOptions::SASL_USERNAME, $username);
+        $this->config->set(ConfigOptions::SASL_PASSWORD, $password);
+
+        return $this;
+    }
+
     //The callback has a signature of function (Rdkafka\Producer $kafka, int $err, string $reason);
     public function setKafkaErrorCallback(callable $callback): self
     {

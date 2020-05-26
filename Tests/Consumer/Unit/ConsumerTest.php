@@ -15,7 +15,7 @@ use RdKafka\Exception;
 use RdKafka\KafkaConsumer;
 use RdKafka\Message;
 use Tests\BaseTestCase;
-use Tests\Util\Fakes\FakeRecord;
+use Tests\Utils\Fakes\FakeRecord;
 
 class ConsumerTest extends BaseTestCase
 {

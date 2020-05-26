@@ -4,7 +4,7 @@ namespace Tests\Common;
 
 use KafkaPhp\Common\TopicFormatter;
 use Tests\BaseTestCase;
-use Tests\Util\Fakes\FakeRecord;
+use Tests\Utils\Fakes\FakeRecord;
 
 class TopicFormatterTest extends BaseTestCase
 {

@@ -47,13 +47,8 @@ class ConsumerFailureTest extends BaseTestCase
         $builder = (new ConsumerBuilder($this->brokerHosts, $this->groupId, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS(), new Logger()))
             ->setNumRetries(0);
 
-        if ($this->env) {
-            $CERTS = __DIR__.'/../../../certs';
-            $builder->setSslData(
-                "$CERTS/$this->env/ca.pem",
-                "$CERTS/$this->env/service.cert",
-                "$CERTS/$this->env/service.key"
-            );
+        if ($this->saslUsername) {
+            $builder->setSaslData($this->saslUsername, $this->saslPassword);
         }
 
         return $builder->build();
@@ -62,13 +57,8 @@ class ConsumerFailureTest extends BaseTestCase
     private function producer() {
         $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::VIDEOBLOCKS());
 
-        if ($this->env) {
-            $CERTS = __DIR__.'/../../../certs';
-            $builder->setSslData(
-                "$CERTS/$this->env/ca.pem",
-                "$CERTS/$this->env/service.cert",
-                "$CERTS/$this->env/service.key"
-            );
+        if ($this->saslUsername) {
+            $builder->setSaslData($this->saslUsername, $this->saslPassword);
         }
 
         return $builder->build();
