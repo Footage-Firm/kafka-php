@@ -133,10 +133,16 @@ class ConsumerBuilder extends KafkaBuilder
 
         if ($this->isUsingSsl($configDump)) {
             $builder->setSslData(
-              $configDump[ConfigOptions::CA_PATH],
-              $configDump[ConfigOptions::CERT_PATH],
-              $configDump[ConfigOptions::KEY_PATH],
-              );
+                $configDump[ConfigOptions::CA_PATH],
+                $configDump[ConfigOptions::CERT_PATH],
+                $configDump[ConfigOptions::KEY_PATH],
+            );
+        } elseif ($this->isUsingSasl($configDump)) {
+            $builder->setSaslData(
+                $configDump[ConfigOptions::SASL_USERNAME],
+                $configDump[ConfigOptions::SASL_PASSWORD],
+                $configDump[ConfigOptions::SASL_MECHANISM]
+            );
         }
 
         return $builder->build();
@@ -151,7 +157,12 @@ class ConsumerBuilder extends KafkaBuilder
           ConfigOptions::CA_PATH,
         ];
         return !array_diff_key(array_flip($necessaryKeys), $configDump)
-          && $config[ConfigOptions::SECURITY_PROTOCOL] = ConfigOptions::SSL;
+          && $configDump[ConfigOptions::SECURITY_PROTOCOL] === 'ssl';
+    }
+
+    private function isUsingSasl(array $configDump): bool
+    {
+        return $configDump[ConfigOptions::SECURITY_PROTOCOL] === 'sasl_ssl';
     }
 
     public function setIdleTimeoutMs(int $idleTimeoutMs): ConsumerBuilder

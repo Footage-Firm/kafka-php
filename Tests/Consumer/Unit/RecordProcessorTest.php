@@ -14,8 +14,8 @@ use KafkaPhp\Traits\RecordFormatter;
 use KafkaPhp\Traits\ShortClassName;
 use Mockery;
 use Tests\BaseTestCase;
-use Tests\Util\Fakes\FakeFactory;
-use Tests\Util\Fakes\FakeRecord;
+use Tests\Utils\Fakes\FakeFactory;
+use Tests\Utils\Fakes\FakeRecord;
 
 class RecordProcessorTest extends BaseTestCase
 {

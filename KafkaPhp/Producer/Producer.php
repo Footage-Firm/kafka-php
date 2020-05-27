@@ -67,12 +67,13 @@ class Producer
         $topicProducer = $this->kafkaClient->newTopic($topic, $topicConf);
 
         try {
-            $encodedRecord = $this->serializer->serialize($record);
+            [$encodedRecord, $encodedKey] = $this->serializer->serialize($record, $key);
+
             /*
              * RD_KAFKA_PARTITION_UA means kafka will automatically decide to which partition the record will be produced.
              * The second argument (msgflags) must always be 0 due to the underlying php-rdkafka implementation
              */
-            $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord, $key);
+            $topicProducer->produce(RD_KAFKA_PARTITION_UA, 0, $encodedRecord, $encodedKey);
         } catch (SchemaRegistryException $e) {
             // Propagate a schema registry error and do not retry.
             throw $e;

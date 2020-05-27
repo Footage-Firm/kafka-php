@@ -10,12 +10,19 @@ use KafkaPhp\Producer\ProducerBuilder;
 use KafkaPhp\Serializers\Exceptions\SchemaRegistryException;
 use Predis\Client;
 use Tests\BaseTestCase;
-use Tests\Util\Fakes\FakeFactory;
-use Tests\Util\Fakes\FakeRecord;
 use Tests\Utils\Factory;
+use Tests\Utils\Fakes\FakeFactory;
 
 class ProducerTest extends BaseTestCase
 {
+
+    public function testProduce()
+    {
+        $this->expectNotToPerformAssertions();
+        $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::STORYBLOCKS());
+        $producer = $builder->build();
+        $producer->produce(Factory::debugRecord('[kafka-php test] ' . $this->faker()->randomNumber(4)));
+    }
 
     public function testExceptionThrown_WhenSchemaRegUrlIsWrong()
     {
@@ -57,7 +64,7 @@ class ProducerTest extends BaseTestCase
 
         $invalidRecord = null;
         $consumer = (new ConsumerBuilder($this->brokerHosts, 'test-consumer', $this->schemaRegistryUrl, Origin::VIDEOBLOCKS()))->build();
-        $consumer->subscribe(FailedRecord::class, function($record) use ($consumer, &$invalidRecord) {
+        $consumer->subscribe(FailedRecord::class, function ($record) use ($consumer, &$invalidRecord) {
             $invalidRecord = $record;
             $consumer->disconnect();
         });

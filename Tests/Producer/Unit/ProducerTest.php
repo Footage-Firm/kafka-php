@@ -13,8 +13,8 @@ use RdKafka\Producer as KafkaProducer;
 use RdKafka\ProducerTopic;
 use RdKafka\TopicConf;
 use Tests\BaseTestCase;
-use Tests\Util\Fakes\FakeFactory;
-use Tests\Util\Fakes\FakeRecord;
+use Tests\Utils\Fakes\FakeFactory;
+use Tests\Utils\Fakes\FakeRecord;
 
 class ProducerTest extends BaseTestCase
 {
@@ -49,7 +49,7 @@ class ProducerTest extends BaseTestCase
         $this->mockRecord = FakeFactory::fakeRecord();
         $this->mockTopicProducer = Mockery::mock(ProducerTopic::class);
 
-        $this->mockSerializer->shouldReceive('serialize')->andReturn($this->fakeEncodedRecord);
+        $this->mockSerializer->shouldReceive('serialize')->andReturn([$this->fakeEncodedRecord, 'key']);
     }
 
     protected function tearDown(): void

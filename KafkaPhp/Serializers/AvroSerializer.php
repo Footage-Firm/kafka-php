@@ -40,19 +40,24 @@ class AvroSerializer implements KafkaSerializerInterface
 
     /**
      * @param BaseRecord $record
-     * @return string
+     * @param string $key
+     * @return array - [$encodedRecord, $encodedKey]
      * @throws SchemaRegistryException
      * @throws AvroEncodingException
      * @throws AvroSchemaParseException
      */
-    public function serialize(BaseRecord $record): string
+    public function serialize(BaseRecord $record, string $key): array
     {
         $schema = AvroSchema::parse($record->schema());
         $data = $record->data();
         $name = $this->kebabCase($record->name());
 
+        $keySchema = AvroSchema::parse('{"type":"string"}');
+
         try {
-            return $this->serializer->encodeRecord($name . '-value', $schema, $data);
+            $encodedRecord = $this->serializer->encodeRecord($name . '-value', $schema, $data);
+            $encodedKey = $this->serializer->encodeRecord($name . '-key', $keySchema, $key);
+            return [$encodedRecord, $encodedKey];
         } catch (AvroEncodingException $e) {
             throw $e;
         } catch (\Exception | \FlixTech\SchemaRegistryApi\Exception\SchemaRegistryException $e) {
