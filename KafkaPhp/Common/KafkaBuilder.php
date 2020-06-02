@@ -43,6 +43,8 @@ abstract class KafkaBuilder
 
     protected $schemaRegistryUrl;
 
+    protected bool $verifyRegistrySsl = true;
+
     abstract public function build();
 
     public function __construct(
@@ -78,6 +80,16 @@ abstract class KafkaBuilder
         $this->config->set(ConfigOptions::SASL_USERNAME, $username);
         $this->config->set(ConfigOptions::SASL_PASSWORD, $password);
 
+        return $this;
+    }
+
+    /**
+     * A temporary fix to handle an issue where prod is getting a bad certificate from schema registry...
+     * @param bool $verify
+     * @return $this
+     */
+    public function setVerifyRegistrySsl(bool $verify) {
+        $this->verifyRegistrySsl = $verify;
         return $this;
     }
 
@@ -120,7 +132,7 @@ abstract class KafkaBuilder
 
     private function createRegistry(): Registry
     {
-        $config = ['base_uri' => $this->schemaRegistryUrl];
+        $config = ['base_uri' => $this->schemaRegistryUrl, 'verify' => $this->verifyRegistrySsl];
 
         $user = parse_url($this->schemaRegistryUrl, PHP_URL_USER);
         $pass = parse_url($this->schemaRegistryUrl, PHP_URL_PASS);

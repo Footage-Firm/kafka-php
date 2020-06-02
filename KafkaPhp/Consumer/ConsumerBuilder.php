@@ -9,8 +9,6 @@ use KafkaPhp\Common\KafkaBuilder;
 use KafkaPhp\Consumer\Exceptions\ConsumerConfigurationException;
 use KafkaPhp\Producer\Producer;
 use KafkaPhp\Producer\ProducerBuilder;
-use KafkaPhp\Serializers\KafkaSerializerInterface;
-use FlixTech\SchemaRegistryApi\Registry;
 use Psr\Log\LoggerInterface;
 use RdKafka\Conf;
 use RdKafka\KafkaConsumer;
@@ -144,6 +142,8 @@ class ConsumerBuilder extends KafkaBuilder
                 $configDump[ConfigOptions::SASL_MECHANISM]
             );
         }
+
+        $builder->setVerifyRegistrySsl($this->verifyRegistrySsl);
 
         return $builder->build();
     }
