@@ -54,18 +54,18 @@ class ConsumerBuilder extends KafkaBuilder
       Origin $origin,
       LoggerInterface $logger = null,
       Conf $config = null,
-      bool $disableAutoCommit = true,
+      bool $enableAutoCommit = true,
       int $autoCommitInterval = 5000
     ) {
-        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config, $disableAutoCommit, $autoCommitInterval);
+        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config, $enableAutoCommit, $autoCommitInterval);
         $this->groupId = $groupId;
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
         $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
         $this->config->set(ConfigOptions::RETRIES, 3);
-        if ($disableAutoCommit) {
-            $this->disableAutoCommit();
-        } else {
+        if ($enableAutoCommit) {
             $this->enableAutoCommit($autoCommitInterval);
+        } else {
+            $this->disableAutoCommit();
         }
     }
 
@@ -125,15 +125,13 @@ class ConsumerBuilder extends KafkaBuilder
     public function enableAutoCommit(int $autoCommitInterval): self
     {
         $this->autoCommitInterval = $autoCommitInterval;
-        $this->config->set(ConsumerConfigOptions::AUTO_COMMIT, 'true');
         $this->config->set(ConsumerConfigOptions::AUTO_COMMIT_INTERVAL, $autoCommitInterval);
-        $this->config->set(ConsumerConfigOptions::OFFSET_STORE_METHOD, 'kafka');
-        $this->config->set(ConsumerConfigOptions::ENABLE_AUTO_OFFSET_STORE, 'true');
         return $this;
     }
 
     public function disableAutoCommit(): self
     {
+        $this->autoCommitInterval = 0;
         $this->config->set(ConsumerConfigOptions::AUTO_COMMIT, 'false');
         $this->config->set(ConsumerConfigOptions::AUTO_COMMIT_INTERVAL, '0');
         $this->config->set(ConsumerConfigOptions::ENABLE_AUTO_OFFSET_STORE, 'false');

@@ -53,7 +53,7 @@ abstract class KafkaBuilder
       Origin $origin,
       LoggerInterface $logger = null,
       Conf $config = null,
-      bool $disableAutoCommit = null,
+      bool $enableAutoCommit = null,
       int $autoCommitInterval = null
     ) {
         $this->brokers = $brokers;
