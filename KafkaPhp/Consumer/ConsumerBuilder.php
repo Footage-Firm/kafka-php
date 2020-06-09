@@ -26,6 +26,10 @@ class ConsumerBuilder extends KafkaBuilder
 
     public const DEFAULT_POLL_INTERVAL_MS = 10;
 
+    public const DEFAULT_AUTO_COMMIT_INTERVAL_MS = 5000;
+
+    public const DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
+
     private $offsetReset = self::DEFAULT_OFFSET_RESET;
 
     private $numRetries = self::DEFAULT_RETRIES;
@@ -33,6 +37,10 @@ class ConsumerBuilder extends KafkaBuilder
     private $connectTimeoutMs = self::DEFAULT_TIMEOUT_MS;
 
     private $pollIntervalMs = self::DEFAULT_POLL_INTERVAL_MS;
+
+    private $autoCommitInterval = self::DEFAULT_AUTO_COMMIT_INTERVAL_MS;
+
+    private $heartbeatIntervalMs = self::DEFAULT_HEARTBEAT_INTERVAL_MS;
 
     /** @var null | int */
     private $idleTimeoutMs = null;
@@ -45,14 +53,20 @@ class ConsumerBuilder extends KafkaBuilder
       string $schemaRegistryUrl,
       Origin $origin,
       LoggerInterface $logger = null,
-      Conf $config = null
+      Conf $config = null,
+      bool $disableAutoCommit = true,
+      int $autoCommitInterval = 5000
     ) {
-        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config);
+        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config, $disableAutoCommit, $autoCommitInterval);
         $this->groupId = $groupId;
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
         $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
         $this->config->set(ConfigOptions::RETRIES, 3);
-        $this->disableAutoCommit();
+        if ($disableAutoCommit) {
+            $this->disableAutoCommit();
+        } else {
+            $this->enableAutoCommit($autoCommitInterval);
+        }
     }
 
     public function build(): Consumer
@@ -75,6 +89,13 @@ class ConsumerBuilder extends KafkaBuilder
     public function setOffsetReset(string $offset): self
     {
         $this->offsetReset = $offset;
+        return $this;
+    }
+
+    public function setHeartbeatIntervalMs(int $heartbeatIntervalMs): self
+    {
+        $this->config->set(ConfigOptions::HEARTBEAT_INTERVAL_MS, $heartbeatIntervalMs);
+        $this->heartbeatIntervalMs = $heartbeatIntervalMs;
         return $this;
     }
 
@@ -101,7 +122,17 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    protected function disableAutoCommit(): self
+    public function enableAutoCommit(int $autoCommitInterval): self
+    {
+        $this->autoCommitInterval = $autoCommitInterval;
+        $this->config->set(ConsumerConfigOptions::AUTO_COMMIT, 'true');
+        $this->config->set(ConsumerConfigOptions::AUTO_COMMIT_INTERVAL, $autoCommitInterval);
+        $this->config->set(ConsumerConfigOptions::OFFSET_STORE_METHOD, 'kafka');
+        $this->config->set(ConsumerConfigOptions::ENABLE_AUTO_OFFSET_STORE, 'true');
+        return $this;
+    }
+
+    public function disableAutoCommit(): self
     {
         $this->config->set(ConsumerConfigOptions::AUTO_COMMIT, 'false');
         $this->config->set(ConsumerConfigOptions::AUTO_COMMIT_INTERVAL, '0');
