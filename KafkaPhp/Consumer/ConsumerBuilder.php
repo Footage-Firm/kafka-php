@@ -48,25 +48,19 @@ class ConsumerBuilder extends KafkaBuilder
     private $groupId;
 
     public function __construct(
-      array $brokers,
-      string $groupId,
-      string $schemaRegistryUrl,
-      Origin $origin,
-      LoggerInterface $logger = null,
-      Conf $config = null,
-      bool $enableAutoCommit = true,
-      int $autoCommitInterval = 5000
-    ) {
-        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config, $enableAutoCommit, $autoCommitInterval);
+        array $brokers,
+        string $groupId,
+        string $schemaRegistryUrl,
+        Origin $origin,
+        LoggerInterface $logger = null,
+        Conf $config = null
+    )
+    {
+        parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config);
         $this->groupId = $groupId;
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
         $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
         $this->config->set(ConfigOptions::RETRIES, 3);
-        if ($enableAutoCommit) {
-            $this->enableAutoCommit($autoCommitInterval);
-        } else {
-            $this->disableAutoCommit();
-        }
     }
 
     public function build(): Consumer
@@ -76,13 +70,13 @@ class ConsumerBuilder extends KafkaBuilder
         $recordProcessor = $this->createRecordProcessor($failureProducer);
 
         return new Consumer(
-          $kafkaConsumer,
-          $this->createSerializer(),
-          $this->logger,
-          $recordProcessor,
-          $this->idleTimeoutMs,
-          $this->connectTimeoutMs,
-          $this->pollIntervalMs
+            $kafkaConsumer,
+            $this->createSerializer(),
+            $this->logger,
+            $recordProcessor,
+            $this->idleTimeoutMs,
+            $this->connectTimeoutMs,
+            $this->pollIntervalMs
         );
     }
 
@@ -103,7 +97,7 @@ class ConsumerBuilder extends KafkaBuilder
     {
         if ($numRetries > self::MAX_RETRIES || $numRetries < 0) {
             throw new ConsumerConfigurationException(
-              sprintf('Invalid retry number. Retries must be between 0 and %s', self::MAX_RETRIES)
+                sprintf('Invalid retry number. Retries must be between 0 and %s', self::MAX_RETRIES)
             );
         }
         $this->numRetries = $numRetries;
@@ -122,8 +116,11 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function enableAutoCommit(int $autoCommitInterval): self
+    public function enableAutoCommit(int $autoCommitInterval = null): self
     {
+        if (!$autoCommitInterval) {
+            $autoCommitInterval = self::DEFAULT_AUTO_COMMIT_INTERVAL_MS;
+        }
         $this->autoCommitInterval = $autoCommitInterval;
         $this->config->set(ConsumerConfigOptions::AUTO_COMMIT_INTERVAL, $autoCommitInterval);
         return $this;
@@ -143,8 +140,8 @@ class ConsumerBuilder extends KafkaBuilder
         $recordProcessor = new RecordProcessor($this->groupId, $failureProducer, $this->logger);
 
         return $recordProcessor
-          ->setNumRetries($this->numRetries)
-          ->setShouldSendToFailureTopic($this->shouldSendToFailureTopic);
+            ->setNumRetries($this->numRetries)
+            ->setShouldSendToFailureTopic($this->shouldSendToFailureTopic);
     }
 
     private function createFailureProducer(): Producer
@@ -163,7 +160,7 @@ class ConsumerBuilder extends KafkaBuilder
                 $configDump[ConfigOptions::CA_PATH],
                 $configDump[ConfigOptions::CERT_PATH],
                 $configDump[ConfigOptions::KEY_PATH],
-            );
+                );
         } elseif ($this->isUsingSasl($configDump)) {
             $builder->setSaslData(
                 $configDump[ConfigOptions::SASL_USERNAME],
@@ -180,13 +177,13 @@ class ConsumerBuilder extends KafkaBuilder
     private function isUsingSsl(array $configDump): bool
     {
         $necessaryKeys = [
-          ConfigOptions::SECURITY_PROTOCOL,
-          ConfigOptions::CERT_PATH,
-          ConfigOptions::KEY_PATH,
-          ConfigOptions::CA_PATH,
+            ConfigOptions::SECURITY_PROTOCOL,
+            ConfigOptions::CERT_PATH,
+            ConfigOptions::KEY_PATH,
+            ConfigOptions::CA_PATH,
         ];
         return !array_diff_key(array_flip($necessaryKeys), $configDump)
-          && $configDump[ConfigOptions::SECURITY_PROTOCOL] === 'ssl';
+            && $configDump[ConfigOptions::SECURITY_PROTOCOL] === 'ssl';
     }
 
     private function isUsingSasl(array $configDump): bool
