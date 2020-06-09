@@ -15,4 +15,6 @@ class ConsumerConfigOptions
 
     public const AUTO_OFFSET_RESET = 'auto.offset.reset';
 
+    public const OFFSET_STORE_METHOD = 'offset.store.method';
+
 }

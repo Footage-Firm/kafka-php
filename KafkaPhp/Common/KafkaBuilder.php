@@ -52,7 +52,9 @@ abstract class KafkaBuilder
       string $schemaRegistryUrl,
       Origin $origin,
       LoggerInterface $logger = null,
-      Conf $config = null
+      Conf $config = null,
+      bool $enableAutoCommit = null,
+      int $autoCommitInterval = null
     ) {
         $this->brokers = $brokers;
         $this->schemaRegistryUrl = $schemaRegistryUrl;
