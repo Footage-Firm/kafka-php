@@ -96,16 +96,16 @@ class RecordProcessor
         }
     }
 
-    private function retry(BaseRecord $record, RecordHandler $handler, int $currentTry = 0): void
+    private function retry(BaseRecord $record, RecordHandler $handler, int $currentRetry = 1): void
     {
-        $this->logger->notice('Retrying record.', ['record' => json_encode($record), 'currentTry' => $currentTry]);
-        if ($currentTry >= $this->numRetries) {
+        $this->logger->notice('Retrying record.', ['record' => json_encode($record), 'currentRetry' => $currentRetry]);
+        if ($currentRetry >= $this->numRetries) {
             $this->handleFailure($record, $handler);
         } else {
             try {
                 $handler->success($record);
             } catch (Throwable $t) {
-                $this->retry($record, $handler, $currentTry + 1);
+                $this->retry($record, $handler, $currentRetry + 1);
             }
         }
     }

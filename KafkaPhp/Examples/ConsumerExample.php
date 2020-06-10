@@ -4,6 +4,9 @@ namespace KafkaPhp\Examples;
 
 use Dotenv\Dotenv;
 use EventsPhp\Storyblocks\Billing\ChargebackEvent;
+use EventsPhp\Storyblocks\Billing\TokenizationRevokedEvent;
+use EventsPhp\Storyblocks\Billing\TransactionEvent;
+use EventsPhp\Storyblocks\Common\DebugRecord;
 use EventsPhp\Storyblocks\Common\Origin;
 use EventsPhp\Storyblocks\Telemetry\TelemetryEvent;
 use KafkaPhp\Consumer\ConsumerBuilder;
@@ -49,12 +52,20 @@ class ConsumerExample
             ->setOffsetReset('end')
             ->build();
 
-        $consumer->subscribe(TelemetryEvent::class, function (TelemetryEvent $event) {
-            print 'Telemetry event: ' . $event->getMeta()->getUuid() . PHP_EOL;
+        $consumer->subscribe(DebugRecord::class, function (TelemetryEvent $event) {
+            print 'Debug record: ' . $event->getMeta()->getUuid() . PHP_EOL;
         });
 
-        $consumer->subscribe(ChargebackEvent::class, function (TelemetryEvent $event) {
+        $consumer->subscribe(ChargebackEvent::class, function (ChargebackEvent $event) {
             print 'Chargeback event: ' . $event->getMeta()->getUuid() . PHP_EOL;
+        });
+
+        $consumer->subscribe(TransactionEvent::class, function (TransactionEvent $event) {
+            print 'Transaction event: ' . $event->getMeta()->getUuid() . PHP_EOL;
+        });
+
+        $consumer->subscribe(TokenizationRevokedEvent::class, function (TokenizationRevokedEvent $event) {
+            print 'Tokenization revoked event: ' . $event->getMeta()->getUuid() . PHP_EOL;
         });
 
         print 'Starting consumer...' . PHP_EOL;
