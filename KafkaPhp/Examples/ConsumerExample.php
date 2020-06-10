@@ -8,9 +8,7 @@ use EventsPhp\Storyblocks\Billing\TokenizationRevokedEvent;
 use EventsPhp\Storyblocks\Billing\TransactionEvent;
 use EventsPhp\Storyblocks\Common\DebugRecord;
 use EventsPhp\Storyblocks\Common\Origin;
-use EventsPhp\Storyblocks\Telemetry\TelemetryEvent;
 use KafkaPhp\Consumer\ConsumerBuilder;
-use Monolog\Logger;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -50,9 +48,10 @@ class ConsumerExample
             ->shouldSendToFailureTopic(false)
             ->setNumRetries(0)
             ->setOffsetReset('end')
+            ->enableDebug()
             ->build();
 
-        $consumer->subscribe(DebugRecord::class, function (TelemetryEvent $event) {
+        $consumer->subscribe(DebugRecord::class, function (DebugRecord $event) {
             print 'Debug record: ' . $event->getMeta()->getUuid() . PHP_EOL;
         });
 

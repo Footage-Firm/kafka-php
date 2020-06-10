@@ -20,7 +20,13 @@ class ProducerTest extends BaseTestCase
     {
         $this->expectNotToPerformAssertions();
         $builder = new ProducerBuilder($this->brokerHosts, $this->schemaRegistryUrl, Origin::STORYBLOCKS());
-        $producer = $builder->build();
+
+        $producer = $builder
+            ->shouldSendToFailureTopic(false)
+            ->setNumRetries(0)
+            ->setSaslData($this->saslUsername, $this->saslPassword)
+            ->build();
+
         $producer->produce(Factory::debugRecord('[kafka-php test] ' . $this->faker()->randomNumber(4)));
     }
 
