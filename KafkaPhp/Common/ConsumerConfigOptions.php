@@ -17,4 +17,6 @@ class ConsumerConfigOptions
 
     public const OFFSET_STORE_METHOD = 'offset.store.method';
 
+    public const TOPIC_METADATA_REFRESH_SPARSE = 'topic.metadata.refresh.sparse';
+
 }

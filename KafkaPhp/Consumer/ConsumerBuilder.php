@@ -58,6 +58,7 @@ class ConsumerBuilder extends KafkaBuilder
         $this->groupId = $groupId;
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $groupId);
         $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, self::DEFAULT_OFFSET_RESET);
+        $this->config->set(ConsumerConfigOptions::TOPIC_METADATA_REFRESH_SPARSE, "true");
         $this->config->set(ConfigOptions::RETRIES, 3);
     }
 
