@@ -86,8 +86,11 @@ class ConsumerBuilder extends KafkaBuilder
         return $this;
     }
 
-    public function setHeartbeatIntervalMs(int $heartbeatIntervalMs): self
+    public function setHeartbeatIntervalMs(int $heartbeatIntervalMs=null): self
     {
+        if (!$heartbeatIntervalMs) {
+            $heartbeatIntervalMs = self::DEFAULT_HEARTBEAT_INTERVAL_MS;
+        }
         $this->config->set(ConfigOptions::HEARTBEAT_INTERVAL_MS, $heartbeatIntervalMs);
         $this->heartbeatIntervalMs = $heartbeatIntervalMs;
         return $this;
