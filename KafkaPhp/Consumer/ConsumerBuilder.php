@@ -17,27 +17,19 @@ class ConsumerBuilder extends KafkaBuilder
 {
 
     public const DEFAULT_RETRIES = 3;
-
     public const MAX_RETRIES = 3;
-
     public const DEFAULT_OFFSET_RESET = 'earliest';
-
     public const DEFAULT_TIMEOUT_MS = 3000;
-
     public const DEFAULT_POLL_INTERVAL_MS = 100;
-
     public const DEFAULT_AUTO_COMMIT_INTERVAL_MS = 5000;
-
     public const DEFAULT_HEARTBEAT_INTERVAL_MS = 3000;
+    public const DEFAULT_FETCH_WAIT_MAX_MS = 2000;
+    public const DEFAULT_SOCKET_TIMEOUT_MS = 120000;
 
     private $numRetries = self::DEFAULT_RETRIES;
-
     private $connectTimeoutMs = self::DEFAULT_TIMEOUT_MS;
-
     private $pollIntervalMs = self::DEFAULT_POLL_INTERVAL_MS;
-
     private $autoCommitInterval = self::DEFAULT_AUTO_COMMIT_INTERVAL_MS;
-
     private $heartbeatIntervalMs = self::DEFAULT_HEARTBEAT_INTERVAL_MS;
 
     /** @var null | int */
@@ -59,9 +51,9 @@ class ConsumerBuilder extends KafkaBuilder
         $this->config->set(ConsumerConfigOptions::GROUP_ID, $groupId);
         $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, self::DEFAULT_OFFSET_RESET);
         $this->config->set(ConfigOptions::RETRIES, 2);
+        $this->config->set(ConsumerConfigOptions::FETCH_WAIT_MAX_MS, self::DEFAULT_FETCH_WAIT_MAX_MS);
+        $this->config->set(ConfigOptions::SOCKET_TIMEOUT_MS, self::DEFAULT_SOCKET_TIMEOUT_MS);
         $this->config->set(ConsumerConfigOptions::TOPIC_METADATA_REFRESH_SPARSE, "true");
-        $this->config->set(ConsumerConfigOptions::FETCH_WAIT_MAX_MS, '2000');
-        $this->config->set(ConfigOptions::SOCKET_TIMEOUT_MS, '120000');
     }
 
     public function build(): Consumer
