@@ -147,8 +147,6 @@ class RecordProcessorTest extends BaseTestCase
         $this->mockSuccessFn->shouldBeCalled()->times($numRetries + 1)->andThrow(Exception::class);
 
         $this->recordProcessor->setNumRetries($numRetries);
-
-        $this->recordProcessor->setNumRetries($numRetries);
         $this->recordProcessor->subscribe(FakeRecord::class, $this->mockSuccessFn, $this->mockFailureFn);
         $this->recordProcessor->process($this->fakeDecodedArray);
     }
