@@ -24,7 +24,7 @@ class ProducerTest extends BaseTestCase
         $producer = $builder
             ->shouldSendToFailureTopic(false)
             ->setNumRetries(0)
-            ->setSaslData($this->saslUsername, $this->saslPassword)
+//            ->setSaslData($this->saslUsername, $this->saslPassword)
             ->build();
 
         $producer->produce(Factory::debugRecord('[kafka-php test] ' . $this->faker()->randomNumber(4)));
