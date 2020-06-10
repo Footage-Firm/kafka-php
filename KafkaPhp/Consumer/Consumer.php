@@ -2,7 +2,6 @@
 
 namespace KafkaPhp\Consumer;
 
-use KafkaPhp\Common\Exceptions\KafkaException;
 use KafkaPhp\Consumer\Exceptions\ConsumerConfigurationException;
 use KafkaPhp\Serializers\KafkaSerializerInterface;
 use KafkaPhp\Traits\RecordFormatter;
@@ -141,7 +140,11 @@ class Consumer
         $this->lastMessageTime = Carbon::now();
 
         while ($this->connected && $this->idleTimeRemaining()) {
-            $message = $this->kafkaClient->consume($this->connectTimeoutMs);
+            try {
+                $message = $this->kafkaClient->consume($this->connectTimeoutMs);
+            } catch (Throwable $t) {
+                $this->logger->error('KafkaConsumer: Error consuming message', ['message' => $t->getMessage()]);
+            }
 
             if (!$message || !is_object($message)) {
                 continue;
