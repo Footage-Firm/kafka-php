@@ -1,6 +1,6 @@
 <?php
 
-namespace KafkaPhp\Example;
+namespace KafkaPhp\Examples;
 
 use KafkaPhp\Producer\ProducerBuilder;
 use Tests\Fakes\FakeFactory;

@@ -30,8 +30,6 @@ class ConsumerBuilder extends KafkaBuilder
 
     public const DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
 
-    private $offsetReset = self::DEFAULT_OFFSET_RESET;
-
     private $numRetries = self::DEFAULT_RETRIES;
 
     private $connectTimeoutMs = self::DEFAULT_TIMEOUT_MS;
@@ -58,8 +56,8 @@ class ConsumerBuilder extends KafkaBuilder
     {
         parent::__construct($brokers, $schemaRegistryUrl, $origin, $logger, $config);
         $this->groupId = $groupId;
-        $this->config->set(ConsumerConfigOptions::GROUP_ID, $this->groupId);
-        $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $this->offsetReset);
+        $this->config->set(ConsumerConfigOptions::GROUP_ID, $groupId);
+        $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, self::DEFAULT_OFFSET_RESET);
         $this->config->set(ConfigOptions::RETRIES, 3);
     }
 
@@ -80,9 +78,9 @@ class ConsumerBuilder extends KafkaBuilder
         );
     }
 
-    public function setOffsetReset(string $offset): self
+    public function setOffsetReset(string $offsetReset): self
     {
-        $this->offsetReset = $offset;
+        $this->config->set(ConsumerConfigOptions::AUTO_OFFSET_RESET, $offsetReset);
         return $this;
     }
 
