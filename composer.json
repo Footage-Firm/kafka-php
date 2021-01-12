@@ -29,7 +29,7 @@
     "spatie/async": "^1.0",
     "nesbot/carbon": "^2.24",
     "doctrine/cache": "^1.10",
-    "storyblocks/events-php": "*",
+    "storyblocks/events-php": ">=269.1",
     "ext-json": "*",
     "predis/predis": "^1.1"
   },
